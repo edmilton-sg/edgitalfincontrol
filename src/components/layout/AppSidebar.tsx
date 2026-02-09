@@ -11,6 +11,9 @@ import type { TranslationKey } from "@/i18n/translations";
 interface AppSidebarProps {
   collapsed: boolean;
   onToggle: () => void;
+  mobileOpen?: boolean;
+  isMobile?: boolean;
+  onNavClick?: () => void;
 }
 
 const navItems: { key: TranslationKey; icon: React.ElementType; path: string }[] = [
@@ -28,14 +31,19 @@ const navItems: { key: TranslationKey; icon: React.ElementType; path: string }[]
   { key: "settings", icon: Settings, path: "/settings" },
 ];
 
-export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
+export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavClick }: AppSidebarProps) {
   const { t } = useLanguage();
+
+  const isVisible = isMobile ? mobileOpen : true;
+  const sidebarWidth = collapsed ? "w-16" : "w-60";
 
   return (
     <aside
       className={cn(
         "fixed left-0 top-0 z-40 flex h-screen flex-col bg-sidebar text-sidebar-foreground transition-all duration-300",
-        collapsed ? "w-16" : "w-60"
+        sidebarWidth,
+        isMobile && !mobileOpen && "-translate-x-full",
+        isMobile && mobileOpen && "translate-x-0 w-60"
       )}
     >
       {/* Logo */}
@@ -62,6 +70,7 @@ export function AppSidebar({ collapsed, onToggle }: AppSidebarProps) {
             end={item.path === "/"}
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+            onClick={onNavClick}
           >
             <item.icon size={20} className="shrink-0" />
             {!collapsed && <span>{t(item.key)}</span>}
