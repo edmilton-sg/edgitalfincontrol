@@ -1,12 +1,31 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { SummaryCards } from "@/components/dashboard/SummaryCards";
+import { RevenueExpenseChart } from "@/components/dashboard/RevenueExpenseChart";
+import { BalanceChart } from "@/components/dashboard/BalanceChart";
+import { CashFlowCard } from "@/components/dashboard/CashFlowCard";
+import { TaxCard } from "@/components/dashboard/TaxCard";
+import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const Index = () => {
+  const { t } = useLanguage();
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">{t("dashboard")}</h1>
+
+      <SummaryCards />
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <RevenueExpenseChart />
+        <BalanceChart />
       </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <CashFlowCard />
+        <TaxCard />
+      </div>
+
+      <RecentTransactions />
     </div>
   );
 };
