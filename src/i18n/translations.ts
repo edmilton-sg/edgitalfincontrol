@@ -169,6 +169,11 @@ export const translations = {
     transactionAdded: "Transação adicionada!",
     noCards: "Nenhum cartão cadastrado",
     noTransactions: "Nenhuma transação",
+    legalName: "Razão Social",
+    foundedDate: "Data de Abertura",
+    cityState: "Cidade / Estado",
+    fetchingCnpj: "Consultando CNPJ...",
+    cnpjNotFound: "CNPJ não encontrado",
   },
   en: {
     dashboard: "Dashboard",
@@ -323,6 +328,11 @@ export const translations = {
     transactionAdded: "Transaction added!",
     noCards: "No cards registered",
     noTransactions: "No transactions",
+    legalName: "Legal Name",
+    foundedDate: "Founded Date",
+    cityState: "City / State",
+    fetchingCnpj: "Looking up tax ID...",
+    cnpjNotFound: "Tax ID not found",
   },
 } as const;
 

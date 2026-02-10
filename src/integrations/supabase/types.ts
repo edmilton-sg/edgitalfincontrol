@@ -70,27 +70,99 @@ export type Database = {
       }
       companies: {
         Row: {
+          address_details: string | null
+          address_district: string | null
+          address_number: string | null
+          address_street: string | null
+          address_zip: string | null
+          city: string | null
           cnpj: string | null
+          company_size: string | null
           created_at: string
+          emails: Json | null
+          equity: number | null
+          founded_date: string | null
           id: string
+          is_head: boolean | null
+          legal_name: string | null
+          legal_nature: string | null
+          main_activity: string | null
+          main_activity_code: number | null
+          members: Json | null
           name: string
           owner_id: string
+          phones: Json | null
+          registration_status: string | null
+          side_activities: Json | null
+          simei_optant: boolean | null
+          simples_optant: boolean | null
+          state: string | null
+          status_date: string | null
+          trade_name: string | null
           updated_at: string
         }
         Insert: {
+          address_details?: string | null
+          address_district?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          city?: string | null
           cnpj?: string | null
+          company_size?: string | null
           created_at?: string
+          emails?: Json | null
+          equity?: number | null
+          founded_date?: string | null
           id?: string
+          is_head?: boolean | null
+          legal_name?: string | null
+          legal_nature?: string | null
+          main_activity?: string | null
+          main_activity_code?: number | null
+          members?: Json | null
           name: string
           owner_id: string
+          phones?: Json | null
+          registration_status?: string | null
+          side_activities?: Json | null
+          simei_optant?: boolean | null
+          simples_optant?: boolean | null
+          state?: string | null
+          status_date?: string | null
+          trade_name?: string | null
           updated_at?: string
         }
         Update: {
+          address_details?: string | null
+          address_district?: string | null
+          address_number?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          city?: string | null
           cnpj?: string | null
+          company_size?: string | null
           created_at?: string
+          emails?: Json | null
+          equity?: number | null
+          founded_date?: string | null
           id?: string
+          is_head?: boolean | null
+          legal_name?: string | null
+          legal_nature?: string | null
+          main_activity?: string | null
+          main_activity_code?: number | null
+          members?: Json | null
           name?: string
           owner_id?: string
+          phones?: Json | null
+          registration_status?: string | null
+          side_activities?: Json | null
+          simei_optant?: boolean | null
+          simples_optant?: boolean | null
+          state?: string | null
+          status_date?: string | null
+          trade_name?: string | null
           updated_at?: string
         }
         Relationships: []
