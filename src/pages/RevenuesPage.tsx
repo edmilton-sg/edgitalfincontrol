@@ -1,32 +1,90 @@
 import { useState, useMemo } from "react";
 import { Plus } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useCompany } from "@/contexts/CompanyContext";
 import { Button } from "@/components/ui/button";
-import { revenuesData, type Revenue, type TransactionStatus } from "@/data/mockData";
 import { RevenueFilters } from "@/components/revenues/RevenueFilters";
 import { RevenueTable } from "@/components/revenues/RevenueTable";
 import { RevenueForm } from "@/components/revenues/RevenueForm";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import type { Revenue, TransactionStatus } from "@/data/mockData";
 
 export default function RevenuesPage() {
   const { t } = useLanguage();
-  const [data, setData] = useState<Revenue[]>(revenuesData);
+  const { toast } = useToast();
+  const { selectedCompanyId } = useCompany();
+  const queryClient = useQueryClient();
   const [formOpen, setFormOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<TransactionStatus | "all">("all");
   const [periodFilter, setPeriodFilter] = useState("all");
 
+  const { data: revenues = [] } = useQuery({
+    queryKey: ["revenues", selectedCompanyId],
+    queryFn: async () => {
+      if (!selectedCompanyId) return [];
+      const { data, error } = await supabase
+        .from("revenues")
+        .select("*")
+        .eq("company_id", selectedCompanyId)
+        .order("date", { ascending: false });
+      if (error) throw error;
+      return data.map((r) => ({
+        id: r.id,
+        date: r.date,
+        description: r.description,
+        client: r.client || "",
+        gross_amount: Number(r.gross_amount),
+        fee_amount: Number(r.fee_amount),
+        net_amount: Number(r.net_amount),
+        payment_method: r.payment_method || "pix",
+        status: r.status || "pending",
+      })) as Revenue[];
+    },
+    enabled: !!selectedCompanyId,
+  });
+
+  const createRevenue = useMutation({
+    mutationFn: async (revenue: Omit<Revenue, "id">) => {
+      const { error } = await supabase.from("revenues").insert({
+        company_id: selectedCompanyId!,
+        date: revenue.date,
+        description: revenue.description,
+        client: revenue.client,
+        gross_amount: revenue.gross_amount,
+        fee_amount: revenue.fee_amount,
+        net_amount: revenue.net_amount,
+        payment_method: revenue.payment_method,
+        status: revenue.status,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["revenues"] });
+    },
+    onError: (err) => {
+      toast({ title: "Erro", description: (err as Error).message, variant: "destructive" });
+    },
+  });
+
   const filtered = useMemo(() => {
-    return data.filter((r) => {
+    return revenues.filter((r) => {
       const matchSearch = !search || r.description.toLowerCase().includes(search.toLowerCase()) || r.client.toLowerCase().includes(search.toLowerCase());
       const matchStatus = statusFilter === "all" || r.status === statusFilter;
       const matchPeriod = periodFilter === "all" || r.date.startsWith(periodFilter);
       return matchSearch && matchStatus && matchPeriod;
     });
-  }, [data, search, statusFilter, periodFilter]);
+  }, [revenues, search, statusFilter, periodFilter]);
 
   const handleSave = (revenue: Revenue) => {
-    setData((prev) => [revenue, ...prev]);
+    createRevenue.mutate(revenue);
   };
+
+  if (!selectedCompanyId) {
+    return <div className="text-center text-muted-foreground py-12">{t("selectCompanyFirst")}</div>;
+  }
 
   return (
     <div className="space-y-6">
