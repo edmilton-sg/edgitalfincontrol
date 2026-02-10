@@ -1,116 +1,145 @@
 
 
-# Modulo de Receitas e Despesas -- Plano de Implementacao
+# Backend Multi-Tenant + Autenticacao + Modulo de Cartoes
 
 ## Resumo
 
-Criar os modulos funcionais de **Receitas** e **Despesas** com formulario de cadastro (dialog/modal), listagem em tabela com filtros, e dados mockados gerenciados via React state. Tudo bilingue (pt-BR / en) seguindo a arquitetura existente e o spec do documento `finc-2.md`.
+Ativar Lovable Cloud (Supabase), criar toda a estrutura de banco multi-tenant com autenticacao, roles e RLS, migrar as paginas de Receitas/Despesas para usar Supabase, implementar o modulo de Cartoes e adicionar login + seletor de empresa para contadores. Sem dados seed - tudo sera cadastrado do zero pelo usuario.
 
 ---
 
-## Estrutura de Arquivos
+## Etapa 1: Ativar Lovable Cloud
+
+Conectar o Supabase via Lovable Cloud para obter autenticacao e banco de dados.
+
+---
+
+## Etapa 2: Migrations SQL (Schema + RLS)
+
+### Migration 1 - Tabelas base e roles
 
 ```text
-src/
-  data/mockData.ts              (atualizar - adicionar mock de receitas e despesas)
-  i18n/translations.ts          (atualizar - novas chaves para os modulos)
-  pages/
-    RevenuesPage.tsx             (novo)
-    ExpensesPage.tsx             (novo)
-  components/
-    revenues/
-      RevenueForm.tsx            (novo - dialog com formulario)
-      RevenueFilters.tsx         (novo - filtros por periodo, status, cliente)
-      RevenueTable.tsx           (novo - tabela de listagem)
-    expenses/
-      ExpenseForm.tsx            (novo - dialog com formulario)
-      ExpenseFilters.tsx         (novo - filtros por periodo, categoria, tipo)
-      ExpenseTable.tsx           (novo - tabela de listagem)
-  App.tsx                        (atualizar rotas)
+1. Enum app_role: admin, accountant, company_owner
+2. Tabela profiles: id (PK, FK auth.users), full_name, created_at
+3. Tabela user_roles: id, user_id (FK auth.users), role (app_role)
+4. Trigger auto-create profile on signup
+5. Tabela companies: id, name, cnpj, owner_id (FK auth.users), created_at
+6. Tabela company_members: id, company_id (FK), user_id (FK), role (text: owner/accountant), created_at
+```
+
+### Migration 2 - Tabelas de dados
+
+```text
+7. Tabela revenues: id, company_id (FK, NOT NULL), date, description, client,
+   gross_amount, fee_amount, net_amount, payment_method, status, created_at
+8. Tabela expenses: id, company_id (FK, NOT NULL), date, description, category,
+   cost_center, amount, payment_method, installments, installment_number,
+   installment_total, is_fixed, is_personal, created_at
+9. Tabela credit_cards: id, company_id (FK, NOT NULL), name, brand, last_digits,
+   card_limit, closing_day, due_day, current_balance, created_at
+10. Tabela card_transactions: id, card_id (FK), company_id (FK, NOT NULL), date,
+    description, amount, installment_number, installment_total, category, created_at
+```
+
+### Migration 3 - Helper functions + RLS
+
+```text
+11. Funcao is_company_member(company_id, user_id) - SECURITY DEFINER
+12. Funcao has_role(user_id, role) - SECURITY DEFINER
+13. RLS em profiles: SELECT own only
+14. RLS em companies: SELECT via membership, INSERT authenticated, UPDATE/DELETE owner only
+15. RLS em company_members: SELECT via membership, INSERT/UPDATE/DELETE owner or self-join
+16. RLS em revenues, expenses, credit_cards, card_transactions:
+    SELECT/INSERT/UPDATE/DELETE via is_company_member(company_id, auth.uid())
 ```
 
 ---
 
-## Dados Mock
+## Etapa 3: Frontend - Autenticacao
 
-### Receitas (conforme spec Module 3)
-Campos: `id`, `date`, `description`, `client`, `gross_amount`, `fee_amount`, `net_amount`, `payment_method`, `status` (paid/pending/overdue)
+### Novos arquivos:
+- `src/contexts/AuthContext.tsx` - Provider com onAuthStateChange, sessao, perfil, role, loading
+- `src/pages/LoginPage.tsx` - Login com email/senha (formulario simples e limpo)
+- `src/pages/SignUpPage.tsx` - Cadastro com nome, email, senha e selecao de role (Empresa ou Contador)
 
-Exemplo: ~8 registros variados com clientes, metodos de pagamento (PIX, boleto, cartao, transferencia), status mistos.
-
-### Despesas (conforme spec Module 4)
-Campos: `id`, `date`, `description`, `category`, `cost_center`, `amount`, `payment_method`, `installments`, `installment_number`, `installment_total`, `is_fixed`, `is_personal`
-
-Categorias: Aluguel, Energia, Internet, Material de Escritorio, Marketing, Transporte, Alimentacao, Software/SaaS.
+### Alteracoes:
+- `src/App.tsx` - Rotas protegidas: redireciona para /login se nao autenticado. Login/signup ficam fora do AppLayout.
 
 ---
 
-## Pagina de Receitas (`RevenuesPage.tsx`)
+## Etapa 4: Frontend - Contexto de Empresa
 
-1. **Header**: Titulo "Receitas" + botao "Nova Receita" (abre dialog)
-2. **Filtros** (`RevenueFilters.tsx`):
-   - Periodo (mes/ano via select)
-   - Status (todos / pago / pendente / atrasado)
-   - Busca por descricao/cliente
-3. **Tabela** (`RevenueTable.tsx`):
-   - Colunas: Data, Descricao, Cliente, Valor Bruto, Taxa, Valor Liquido, Metodo, Status
-   - Badge colorido no status (verde=pago, amarelo=pendente, vermelho=atrasado)
-   - Totalizador no rodape (soma do valor liquido filtrado)
-4. **Formulario** (`RevenueForm.tsx`):
-   - Dialog modal com campos: data (datepicker), descricao, cliente, valor bruto, taxa, metodo de pagamento (select), status (select)
-   - Valor liquido calculado automaticamente (bruto - taxa)
-   - Validacao com zod
-   - Ao salvar, adiciona ao state local e fecha o dialog
+### Novos arquivos:
+- `src/contexts/CompanyContext.tsx` - Carrega empresas vinculadas ao usuario, gerencia `selectedCompanyId`
+- `src/components/layout/CompanySelector.tsx` - Dropdown no header para contadores alternarem entre empresas
+- `src/pages/CompanySetupPage.tsx` - Pagina para empresa criar sua primeira company (nome + CNPJ) ao fazer primeiro login
+
+### Alteracoes:
+- `src/components/layout/AppHeader.tsx` - Adicionar CompanySelector ao lado do avatar
+- `src/App.tsx` - Envolver rotas com CompanyProvider, redirecionar para setup se usuario nao tem empresa vinculada
 
 ---
 
-## Pagina de Despesas (`ExpensesPage.tsx`)
+## Etapa 5: Migrar Receitas e Despesas para Supabase
 
-1. **Header**: Titulo "Despesas" + botao "Nova Despesa" (abre dialog)
-2. **Filtros** (`ExpenseFilters.tsx`):
-   - Periodo (mes/ano via select)
-   - Categoria (select com as categorias)
-   - Tipo: Todas / Fixa / Variavel
-   - Busca por descricao
-3. **Tabela** (`ExpenseTable.tsx`):
-   - Colunas: Data, Descricao, Categoria, Centro de Custo, Valor, Metodo, Parcela, Fixa, Pessoal
-   - Icones/badges para is_fixed e is_personal
-   - Totalizador no rodape
-4. **Formulario** (`ExpenseForm.tsx`):
-   - Dialog modal com campos: data, descricao, categoria (select), centro de custo, valor, metodo de pagamento, parcelas (numero), fixa (switch), pessoal (switch)
-   - Validacao com zod
-   - Ao salvar, adiciona ao state local
+### Alteracoes:
+- `src/pages/RevenuesPage.tsx` - Substituir `useState(mockData)` por queries Supabase filtradas por `selectedCompanyId`. INSERT com company_id. Usar `@tanstack/react-query` para fetch e mutations.
+- `src/pages/ExpensesPage.tsx` - Idem.
+- `src/components/revenues/RevenueForm.tsx` - onSave faz INSERT no Supabase
+- `src/components/expenses/ExpenseForm.tsx` - onSave faz INSERT no Supabase
+- `src/data/mockData.ts` - Manter apenas os tipos/interfaces como referencia. Remover arrays de dados mock.
 
 ---
 
-## Traducoes (i18n)
+## Etapa 6: Modulo de Cartoes (novo)
 
-Novas chaves para ambos os idiomas:
-- Titulos e labels dos formularios (newRevenue, newExpense, description, client, grossAmount, feeAmount, netAmount, paymentMethod, category, costCenter, installments, fixed, personal, etc.)
-- Filtros (allStatuses, allCategories, filterByPeriod, searchPlaceholder)
-- Botoes (save, cancel, add)
-- Metodos de pagamento (pix, bankSlip, creditCard, transfer, cash)
-- Categorias de despesa
-- Totais (total, totalFiltered)
+### Novos arquivos:
+- `src/pages/CardsPage.tsx` - Grid visual de cartoes + tabela de transacoes do cartao selecionado
+- `src/components/cards/CardForm.tsx` - Dialog para cadastrar cartao (nome, bandeira, ultimos digitos, limite, dia fechamento, dia vencimento)
+- `src/components/cards/CardList.tsx` - Grid responsivo com cards visuais estilo cartao de credito, barra de progresso do limite
+- `src/components/cards/CardTransactions.tsx` - Tabela de transacoes do cartao selecionado com totalizador
+
+### Alteracoes:
+- `src/App.tsx` - Rota `/cards` aponta para CardsPage (substituir PlaceholderPage)
 
 ---
 
-## Rotas
+## Etapa 7: Traducoes (i18n)
 
-Atualizar `App.tsx`:
-- `/revenues` -> `<RevenuesPage />`
-- `/expenses` -> `<ExpensesPage />`
+Novas chaves em pt-BR e en:
+- Autenticacao: login, signUp, email, password, fullName, logout, selectRole, companyOwner, accountant
+- Empresa: companyName, cnpj, createCompany, selectCompany, noCompanyYet, setupCompany
+- Cartoes: newCard, cardName, cardBrand, lastDigits, cardLimit, closingDay, dueDay, currentBalance, usedLimit, visa, mastercard, elo, amex, cardTransactions, noCardSelected, addTransaction, newTransaction
 
-(Substituir os PlaceholderPage atuais dessas rotas)
+---
+
+## Fluxo do Usuario
+
+```text
+1. Cadastro -> Escolhe role (Empresa ou Contador)
+2. Se Empresa:
+   -> Redireciona para CompanySetup (cria empresa + CNPJ)
+   -> Auto-vincula como owner em company_members
+   -> Entra no Dashboard com dados vazios
+   -> Pode cadastrar receitas, despesas, cartoes
+3. Se Contador:
+   -> Entra no Dashboard sem empresa selecionada
+   -> Precisa ser vinculado a empresas (pelo owner ou admin)
+   -> Seletor de empresa aparece no header
+   -> Ao selecionar, ve os dados daquela empresa
+```
 
 ---
 
 ## Secao Tecnica
 
-- **State management**: `useState` local em cada pagina (sem backend por enquanto). Os dados mock sao carregados como estado inicial.
-- **Formularios**: `react-hook-form` + `zod` para validacao. Dialog do shadcn/ui para o modal.
-- **Datepicker**: Componente shadcn Calendar dentro de Popover com `pointer-events-auto`.
-- **Filtros**: Controlados via state, aplicados com `.filter()` sobre o array de dados antes de renderizar a tabela.
-- **Formatacao**: Valores monetarios formatados como BRL (`R$ 1.234,56`) ou USD conforme idioma ativo.
-- **Responsividade**: Tabela com scroll horizontal em mobile. Filtros empilham em coluna. Dialog ocupa largura total em telas pequenas.
+- **Supabase Client**: Gerado automaticamente pelo Lovable Cloud em `src/integrations/supabase/`
+- **State**: `@tanstack/react-query` para todas as queries e mutations Supabase
+- **Auth**: `onAuthStateChange` listener configurado ANTES de `getSession()` no AuthContext
+- **RLS**: Funcao `is_company_member` com SECURITY DEFINER evita recursao infinita
+- **Roles**: Tabela separada `user_roles` - nunca no profiles (previne escalacao de privilegios)
+- **Company switching**: `selectedCompanyId` em CompanyContext, passado como filtro em todas as queries
+- **Formularios**: Mantidos com react-hook-form + zod, agora fazem INSERT via Supabase
+- **Cartoes**: Mesmo padrao de arquitetura (form dialog, tabela, filtros)
+- **Sem dados seed**: Banco comeca vazio. Usuario cria empresa e dados do zero para testar.
 
