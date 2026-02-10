@@ -128,44 +128,43 @@ export default function CompanySetupPage() {
     if (!user) return;
     setLoading(true);
 
-    const insertData: Record<string, unknown> = {
-      name,
-      cnpj: cnpj || null,
-      owner_id: user.id,
-    };
-
-    if (cnpjData) {
-      insertData.legal_name = cnpjData.legalName;
-      insertData.trade_name = cnpjData.tradeName;
-      insertData.founded_date = cnpjData.foundedDate;
-      insertData.main_activity = cnpjData.mainActivity;
-      insertData.main_activity_code = cnpjData.mainActivityCode;
-      insertData.side_activities = cnpjData.sideActivities;
-      insertData.legal_nature = cnpjData.legalNature;
-      insertData.company_size = cnpjData.companySize;
-      insertData.simples_optant = cnpjData.simplesOptant;
-      insertData.simei_optant = cnpjData.simeiOptant;
-      insertData.equity = cnpjData.equity;
-      insertData.registration_status = cnpjData.registrationStatus;
-      insertData.status_date = cnpjData.statusDate;
-      insertData.address_street = cnpjData.addressStreet;
-      insertData.address_number = cnpjData.addressNumber;
-      insertData.address_district = cnpjData.addressDistrict;
-      insertData.address_details = cnpjData.addressDetails;
-      insertData.address_zip = cnpjData.addressZip;
-      insertData.city = cnpjData.city;
-      insertData.state = cnpjData.state;
-      insertData.phones = cnpjData.phones;
-      insertData.emails = cnpjData.emails;
-      insertData.members = cnpjData.members;
-      insertData.is_head = cnpjData.isHead;
-    }
-
     const { data: company, error } = await supabase
       .from("companies")
-      .insert(insertData as any)
+      .insert({ name, cnpj: cnpj || null, owner_id: user.id })
       .select("id")
       .single();
+
+    if (!error && company && cnpjData) {
+      await supabase
+        .from("companies")
+        .update({
+          legal_name: cnpjData.legalName,
+          trade_name: cnpjData.tradeName,
+          founded_date: cnpjData.foundedDate,
+          main_activity: cnpjData.mainActivity,
+          main_activity_code: cnpjData.mainActivityCode,
+          side_activities: cnpjData.sideActivities,
+          legal_nature: cnpjData.legalNature,
+          company_size: cnpjData.companySize,
+          simples_optant: cnpjData.simplesOptant,
+          simei_optant: cnpjData.simeiOptant,
+          equity: cnpjData.equity,
+          registration_status: cnpjData.registrationStatus,
+          status_date: cnpjData.statusDate,
+          address_street: cnpjData.addressStreet,
+          address_number: cnpjData.addressNumber,
+          address_district: cnpjData.addressDistrict,
+          address_details: cnpjData.addressDetails,
+          address_zip: cnpjData.addressZip,
+          city: cnpjData.city,
+          state: cnpjData.state,
+          phones: cnpjData.phones,
+          emails: cnpjData.emails,
+          members: cnpjData.members,
+          is_head: cnpjData.isHead,
+        } as any)
+        .eq("id", company.id);
+    }
 
     if (error) {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
