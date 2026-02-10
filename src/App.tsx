@@ -6,6 +6,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { LanguageProvider } from "@/i18n/LanguageContext";
 import { AppLayout } from "@/components/layout/AppLayout";
 import Index from "./pages/Index";
+import RevenuesPage from "./pages/RevenuesPage";
+import ExpensesPage from "./pages/ExpensesPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import NotFound from "./pages/NotFound";
 
@@ -22,8 +24,8 @@ const App = () => (
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/cash-flow" element={<PlaceholderPage titleKey="cashFlow" />} />
-              <Route path="/revenues" element={<PlaceholderPage titleKey="revenues" />} />
-              <Route path="/expenses" element={<PlaceholderPage titleKey="expenses" />} />
+              <Route path="/revenues" element={<RevenuesPage />} />
+              <Route path="/expenses" element={<ExpensesPage />} />
               <Route path="/cards" element={<PlaceholderPage titleKey="cards" />} />
               <Route path="/dre" element={<PlaceholderPage titleKey="dre" />} />
               <Route path="/taxes" element={<PlaceholderPage titleKey="taxes" />} />
