@@ -117,6 +117,58 @@ export const translations = {
     cancel: "Cancelar",
     filterByPeriod: "Período",
     allPeriods: "Todos os Períodos",
+
+    // Auth
+    login: "Entrar",
+    signUp: "Cadastrar",
+    email: "E-mail",
+    password: "Senha",
+    fullName: "Nome Completo",
+    logout: "Sair",
+    selectRole: "Tipo de Conta",
+    companyOwner: "Empresa",
+    accountant: "Contador",
+    loginDescription: "Entre com suas credenciais para acessar o sistema",
+    signUpDescription: "Crie sua conta para começar a gerenciar suas finanças",
+    loginError: "Erro ao entrar",
+    signUpError: "Erro ao cadastrar",
+    signUpSuccess: "Cadastro realizado!",
+    checkEmail: "Verifique seu e-mail para confirmar a conta.",
+    noAccount: "Não tem conta?",
+    hasAccount: "Já tem conta?",
+
+    // Company
+    companyName: "Nome da Empresa",
+    cnpj: "CNPJ",
+    createCompany: "Criar Empresa",
+    selectCompany: "Selecionar Empresa",
+    noCompanyYet: "Nenhuma empresa cadastrada",
+    setupCompany: "Cadastrar Empresa",
+    setupCompanyDesc: "Cadastre sua empresa para começar a usar o sistema",
+    companyCreated: "Empresa criada com sucesso!",
+    selectCompanyFirst: "Selecione uma empresa para visualizar os dados",
+
+    // Cards
+    newCard: "Novo Cartão",
+    cardName: "Nome do Cartão",
+    cardBrand: "Bandeira",
+    lastDigits: "Últimos 4 Dígitos",
+    cardLimit: "Limite",
+    closingDay: "Dia Fechamento",
+    dueDay: "Dia Vencimento",
+    currentCardBalance: "Saldo Atual",
+    usedLimit: "Usado",
+    visa: "Visa",
+    mastercard: "Mastercard",
+    elo: "Elo",
+    amex: "Amex",
+    cardTransactions: "Transações do Cartão",
+    noCardSelected: "Selecione um cartão para ver as transações",
+    newTransaction: "Nova Transação",
+    cardCreated: "Cartão criado com sucesso!",
+    transactionAdded: "Transação adicionada!",
+    noCards: "Nenhum cartão cadastrado",
+    noTransactions: "Nenhuma transação",
   },
   en: {
     dashboard: "Dashboard",
@@ -171,7 +223,6 @@ export const translations = {
     lightMode: "Light Mode",
     darkMode: "Dark Mode",
 
-    // Revenue module
     newRevenue: "New Revenue",
     editRevenue: "Edit Revenue",
     description: "Description",
@@ -184,7 +235,6 @@ export const translations = {
     searchRevenue: "Search by description or client...",
     totalNetAmount: "Total Net",
 
-    // Expense module
     newExpense: "New Expense",
     editExpense: "Edit Expense",
     category: "Category",
@@ -202,14 +252,12 @@ export const translations = {
     yes: "Yes",
     no: "No",
 
-    // Payment methods
     pix: "PIX",
     bankSlip: "Bank Slip",
     creditCard: "Credit Card",
     transfer: "Transfer",
     cash: "Cash",
 
-    // Expense categories
     rent: "Rent",
     energy: "Energy",
     internet: "Internet",
@@ -219,11 +267,62 @@ export const translations = {
     food: "Food",
     software: "Software/SaaS",
 
-    // Form
     save: "Save",
     cancel: "Cancel",
     filterByPeriod: "Period",
     allPeriods: "All Periods",
+
+    // Auth
+    login: "Sign In",
+    signUp: "Sign Up",
+    email: "Email",
+    password: "Password",
+    fullName: "Full Name",
+    logout: "Sign Out",
+    selectRole: "Account Type",
+    companyOwner: "Company",
+    accountant: "Accountant",
+    loginDescription: "Sign in to access your financial dashboard",
+    signUpDescription: "Create your account to start managing your finances",
+    loginError: "Sign in error",
+    signUpError: "Sign up error",
+    signUpSuccess: "Account created!",
+    checkEmail: "Check your email to confirm your account.",
+    noAccount: "Don't have an account?",
+    hasAccount: "Already have an account?",
+
+    // Company
+    companyName: "Company Name",
+    cnpj: "Tax ID",
+    createCompany: "Create Company",
+    selectCompany: "Select Company",
+    noCompanyYet: "No company registered",
+    setupCompany: "Register Company",
+    setupCompanyDesc: "Register your company to start using the system",
+    companyCreated: "Company created successfully!",
+    selectCompanyFirst: "Select a company to view data",
+
+    // Cards
+    newCard: "New Card",
+    cardName: "Card Name",
+    cardBrand: "Brand",
+    lastDigits: "Last 4 Digits",
+    cardLimit: "Limit",
+    closingDay: "Closing Day",
+    dueDay: "Due Day",
+    currentCardBalance: "Current Balance",
+    usedLimit: "Used",
+    visa: "Visa",
+    mastercard: "Mastercard",
+    elo: "Elo",
+    amex: "Amex",
+    cardTransactions: "Card Transactions",
+    noCardSelected: "Select a card to view transactions",
+    newTransaction: "New Transaction",
+    cardCreated: "Card created successfully!",
+    transactionAdded: "Transaction added!",
+    noCards: "No cards registered",
+    noTransactions: "No transactions",
   },
 } as const;
 

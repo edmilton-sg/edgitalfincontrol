@@ -1,0 +1,93 @@
+import { useLanguage } from "@/i18n/LanguageContext";
+import { CreditCard } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
+
+interface CreditCardData {
+  id: string;
+  name: string;
+  brand: string;
+  last_digits: string | null;
+  card_limit: number;
+  current_balance: number;
+  closing_day: number;
+  due_day: number;
+}
+
+interface CardListProps {
+  cards: CreditCardData[];
+  isLoading: boolean;
+  selectedCardId: string | null;
+  onSelectCard: (id: string) => void;
+}
+
+const brandGradients: Record<string, string> = {
+  visa: "from-blue-600 to-blue-900",
+  mastercard: "from-red-500 to-orange-600",
+  elo: "from-yellow-500 to-yellow-700",
+  amex: "from-emerald-500 to-emerald-800",
+};
+
+export function CardList({ cards, isLoading, selectedCardId, onSelectCard }: CardListProps) {
+  const { t } = useLanguage();
+
+  if (isLoading) {
+    return (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[1, 2, 3].map((i) => <Skeleton key={i} className="h-44 rounded-xl" />)}
+      </div>
+    );
+  }
+
+  if (cards.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <CreditCard size={48} className="mx-auto mb-4 opacity-30" />
+        <p>{t("noCards")}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {cards.map((card) => {
+        const usedPercent = card.card_limit > 0 ? (card.current_balance / card.card_limit) * 100 : 0;
+        const gradient = brandGradients[card.brand] ?? brandGradients.visa;
+        const isSelected = card.id === selectedCardId;
+
+        return (
+          <button
+            key={card.id}
+            onClick={() => onSelectCard(card.id)}
+            className={cn(
+              "relative rounded-xl p-5 text-white text-left transition-all bg-gradient-to-br",
+              gradient,
+              isSelected && "ring-2 ring-primary ring-offset-2 ring-offset-background scale-[1.02]",
+              "hover:scale-[1.01] hover:shadow-lg"
+            )}
+          >
+            <div className="flex justify-between items-start mb-6">
+              <span className="text-sm font-medium opacity-90">{card.name}</span>
+              <span className="text-xs uppercase font-bold opacity-80">{card.brand}</span>
+            </div>
+            <div className="text-lg font-mono tracking-widest mb-4">
+              •••• •••• •••• {card.last_digits || "0000"}
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs opacity-80">
+                <span>{t("usedLimit")}: R$ {card.current_balance.toFixed(2)}</span>
+                <span>R$ {card.card_limit.toFixed(2)}</span>
+              </div>
+              <Progress value={usedPercent} className="h-1.5 bg-white/20" />
+            </div>
+            <div className="flex justify-between mt-3 text-xs opacity-70">
+              <span>{t("closingDay")}: {card.closing_day}</span>
+              <span>{t("dueDay")}: {card.due_day}</span>
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
