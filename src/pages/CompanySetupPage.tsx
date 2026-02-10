@@ -20,6 +20,15 @@ export default function CompanySetupPage() {
   const [cnpj, setCnpj] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const formatCnpj = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+    return digits
+      .replace(/^(\d{2})(\d)/, "$1.$2")
+      .replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3")
+      .replace(/\.(\d{3})(\d)/, ".$1/$2")
+      .replace(/(\d{4})(\d)/, "$1-$2");
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) return;
@@ -63,7 +72,7 @@ export default function CompanySetupPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="cnpj">{t("cnpj")}</Label>
-              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(e.target.value)} placeholder="00.000.000/0000-00" maxLength={18} />
+              <Input id="cnpj" value={cnpj} onChange={(e) => setCnpj(formatCnpj(e.target.value))} placeholder="00.000.000/0000-00" maxLength={18} />
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? "..." : t("createCompany")}
