@@ -63,6 +63,60 @@ export const translations = {
     // Theme
     lightMode: "Modo Claro",
     darkMode: "Modo Escuro",
+
+    // Revenue module
+    newRevenue: "Nova Receita",
+    editRevenue: "Editar Receita",
+    description: "Descrição",
+    client: "Cliente",
+    grossAmount: "Valor Bruto",
+    feeAmount: "Taxa",
+    netAmount: "Valor Líquido",
+    paymentMethod: "Método de Pagamento",
+    allStatuses: "Todos os Status",
+    searchRevenue: "Buscar por descrição ou cliente...",
+    totalNetAmount: "Total Líquido",
+
+    // Expense module
+    newExpense: "Nova Despesa",
+    editExpense: "Editar Despesa",
+    category: "Categoria",
+    costCenter: "Centro de Custo",
+    installments: "Parcelas",
+    installment: "Parcela",
+    fixed: "Fixa",
+    personal: "Pessoal",
+    allCategories: "Todas as Categorias",
+    allTypes: "Todos os Tipos",
+    fixedExpenses: "Fixas",
+    variableExpenses: "Variáveis",
+    searchExpense: "Buscar por descrição...",
+    totalAmount: "Total",
+    yes: "Sim",
+    no: "Não",
+
+    // Payment methods
+    pix: "PIX",
+    bankSlip: "Boleto",
+    creditCard: "Cartão de Crédito",
+    transfer: "Transferência",
+    cash: "Dinheiro",
+
+    // Expense categories
+    rent: "Aluguel",
+    energy: "Energia",
+    internet: "Internet",
+    officeSupplies: "Material de Escritório",
+    marketing: "Marketing",
+    transport: "Transporte",
+    food: "Alimentação",
+    software: "Software/SaaS",
+
+    // Form
+    save: "Salvar",
+    cancel: "Cancelar",
+    filterByPeriod: "Período",
+    allPeriods: "Todos os Períodos",
   },
   en: {
     dashboard: "Dashboard",
@@ -116,6 +170,60 @@ export const translations = {
 
     lightMode: "Light Mode",
     darkMode: "Dark Mode",
+
+    // Revenue module
+    newRevenue: "New Revenue",
+    editRevenue: "Edit Revenue",
+    description: "Description",
+    client: "Client",
+    grossAmount: "Gross Amount",
+    feeAmount: "Fee",
+    netAmount: "Net Amount",
+    paymentMethod: "Payment Method",
+    allStatuses: "All Statuses",
+    searchRevenue: "Search by description or client...",
+    totalNetAmount: "Total Net",
+
+    // Expense module
+    newExpense: "New Expense",
+    editExpense: "Edit Expense",
+    category: "Category",
+    costCenter: "Cost Center",
+    installments: "Installments",
+    installment: "Installment",
+    fixed: "Fixed",
+    personal: "Personal",
+    allCategories: "All Categories",
+    allTypes: "All Types",
+    fixedExpenses: "Fixed",
+    variableExpenses: "Variable",
+    searchExpense: "Search by description...",
+    totalAmount: "Total",
+    yes: "Yes",
+    no: "No",
+
+    // Payment methods
+    pix: "PIX",
+    bankSlip: "Bank Slip",
+    creditCard: "Credit Card",
+    transfer: "Transfer",
+    cash: "Cash",
+
+    // Expense categories
+    rent: "Rent",
+    energy: "Energy",
+    internet: "Internet",
+    officeSupplies: "Office Supplies",
+    marketing: "Marketing",
+    transport: "Transport",
+    food: "Food",
+    software: "Software/SaaS",
+
+    // Form
+    save: "Save",
+    cancel: "Cancel",
+    filterByPeriod: "Period",
+    allPeriods: "All Periods",
   },
 } as const;
 
