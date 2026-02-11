@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Upload } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { InvoiceImportDialog } from "@/components/cards/InvoiceImportDialog";
 import { format } from "date-fns";
 
 interface CardTransactionsProps {
@@ -37,6 +38,7 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
   const [editingTx, setEditingTx] = useState<string | null>(null);
   const [deletingTxId, setDeletingTxId] = useState<string | null>(null);
   const [form, setForm] = useState<TransactionForm>(emptyForm);
+  const [importOpen, setImportOpen] = useState(false);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["card_transactions", cardId],
@@ -143,10 +145,16 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">{t("cardTransactions")}</CardTitle>
-        <Button size="sm" onClick={openNew}>
-          <Plus className="mr-1 h-3 w-3" />
-          {t("newTransaction")}
-        </Button>
+        <div className="flex gap-2">
+          <Button size="sm" variant="outline" onClick={() => setImportOpen(true)}>
+            <Upload className="mr-1 h-3 w-3" />
+            {t("importInvoice")}
+          </Button>
+          <Button size="sm" onClick={openNew}>
+            <Plus className="mr-1 h-3 w-3" />
+            {t("newTransaction")}
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -244,6 +252,13 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      <InvoiceImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        cardId={cardId}
+        companyId={companyId}
+      />
 
       <DeleteConfirmDialog
         open={!!deletingTxId}

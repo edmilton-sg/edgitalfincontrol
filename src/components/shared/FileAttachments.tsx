@@ -9,7 +9,7 @@ import type { Attachment } from "@/data/mockData";
 interface FileAttachmentsProps {
   attachments: Attachment[];
   recordId?: string;
-  recordType: "revenue" | "expense" | "credit_card" | "card_transaction";
+  recordType: "revenue" | "expense" | "credit_card" | "card_transaction" | "card_invoice";
   companyId: string;
   onAttachmentsChange?: (attachments: Attachment[]) => void;
   readOnly?: boolean;
