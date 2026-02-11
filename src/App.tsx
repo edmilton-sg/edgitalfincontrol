@@ -43,11 +43,6 @@ function ProtectedRoutes() {
     return <Navigate to="/company-setup" replace />;
   }
 
-  // Accountants with no companies → request access
-  if (role === "accountant" && companies.length === 0) {
-    return <Navigate to="/request-access" replace />;
-  }
-
   return (
     <AppLayout>
       <Routes>
