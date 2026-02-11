@@ -5,6 +5,7 @@ import {
   UserPlus, ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import logo from "@/assets/fc.png";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
@@ -57,10 +58,10 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavCli
     >
       {/* Logo */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
-        {!collapsed && (
-          <span className="text-xl font-bold tracking-tight text-sidebar-primary">
-            FinControl
-          </span>
+        {!collapsed ? (
+          <img src={logo} alt="FinControl" className="h-8 object-contain" />
+        ) : (
+          <img src={logo} alt="FinControl" className="h-7 w-7 object-cover object-left" />
         )}
         <button
           onClick={onToggle}
