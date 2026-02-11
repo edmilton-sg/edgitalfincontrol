@@ -27,7 +27,7 @@ export default function SignUpPage() {
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: { full_name: fullName, role },
         emailRedirectTo: window.location.origin,
       },
     });
@@ -36,11 +36,6 @@ export default function SignUpPage() {
       toast({ title: t("signUpError"), description: error.message, variant: "destructive" });
       setLoading(false);
       return;
-    }
-
-    if (data.user) {
-      // Insert user role
-      await supabase.from("user_roles").insert({ user_id: data.user.id, role });
     }
 
     toast({
