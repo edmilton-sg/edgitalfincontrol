@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseInvoiceCSV, type ParsedTransaction } from "@/lib/parseInvoiceCSV";
+import { useCategories } from "@/hooks/useCategories";
 
 interface InvoiceImportDialogProps {
   open: boolean;
@@ -43,6 +44,7 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { categories } = useCategories();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [step, setStep] = useState<"upload" | "review">("upload");
@@ -247,7 +249,7 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
               </span>
             </div>
 
-            <ScrollArea className="flex-1 min-h-0 max-h-[400px]">
+            <div className="flex-1 min-h-0 overflow-y-auto max-h-[50vh] border rounded-md">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -277,12 +279,20 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
                         />
                       </TableCell>
                       <TableCell>
-                        <Input
-                          value={tx.category}
-                          onChange={(e) => updateTx(i, "category", e.target.value)}
-                          className="h-7 text-xs"
-                          placeholder="—"
-                        />
+                        <Select
+                          value={tx.category || "__none__"}
+                          onValueChange={(v) => updateTx(i, "category", v === "__none__" ? "" : v)}
+                        >
+                          <SelectTrigger className="h-7 text-xs">
+                            <SelectValue placeholder="—" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="__none__">—</SelectItem>
+                            {categories.map((cat) => (
+                              <SelectItem key={cat.id} value={cat.name}>{cat.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </TableCell>
                       <TableCell className="text-right text-xs font-medium">
                         R$ {tx.amount.toFixed(2)}
@@ -296,7 +306,7 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
                   ))}
                 </TableBody>
               </Table>
-            </ScrollArea>
+            </div>
 
             <div className="flex justify-end gap-3 pt-2">
               <Button variant="outline" onClick={() => handleClose(false)}>

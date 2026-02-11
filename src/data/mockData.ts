@@ -47,7 +47,7 @@ export interface Revenue {
 }
 
 // Expense types
-export type ExpenseCategory = "rent" | "energy" | "internet" | "officeSupplies" | "marketing" | "transport" | "food" | "software";
+export type ExpenseCategory = string;
 
 export interface Expense {
   id: number | string;

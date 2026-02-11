@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { ExpenseCategory } from "@/data/mockData";
+import { useCategories } from "@/hooks/useCategories";
 
 interface ExpenseFiltersProps {
   search: string;
@@ -14,10 +15,9 @@ interface ExpenseFiltersProps {
   onPeriodChange: (v: string) => void;
 }
 
-const categories: ExpenseCategory[] = ["rent", "energy", "internet", "officeSupplies", "marketing", "transport", "food", "software"];
-
 export function ExpenseFilters({ search, onSearchChange, categoryFilter, onCategoryChange, typeFilter, onTypeChange, periodFilter, onPeriodChange }: ExpenseFiltersProps) {
   const { t } = useLanguage();
+  const { categories } = useCategories();
 
   return (
     <div className="flex flex-col sm:flex-row gap-3 flex-wrap">
@@ -34,7 +34,7 @@ export function ExpenseFilters({ search, onSearchChange, categoryFilter, onCateg
         <SelectContent>
           <SelectItem value="all">{t("allCategories")}</SelectItem>
           {categories.map((c) => (
-            <SelectItem key={c} value={c}>{t(c)}</SelectItem>
+            <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
           ))}
         </SelectContent>
       </Select>

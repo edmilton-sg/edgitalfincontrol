@@ -16,11 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Calendar } from "@/components/ui/calendar";
 import { FileAttachments } from "@/components/shared/FileAttachments";
 import type { Expense, PaymentMethod, ExpenseCategory, Attachment } from "@/data/mockData";
+import { useCategories } from "@/hooks/useCategories";
 
 const schema = z.object({
   date: z.date({ required_error: "Required" }),
   description: z.string().min(1).max(200),
-  category: z.enum(["rent", "energy", "internet", "officeSupplies", "marketing", "transport", "food", "software"]),
+  category: z.string().min(1),
   cost_center: z.string().min(1).max(100),
   amount: z.coerce.number().positive(),
   payment_method: z.enum(["pix", "bankSlip", "creditCard", "transfer", "cash"]),
@@ -45,6 +46,7 @@ interface ExpenseFormProps {
 
 export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments = [], onAttachmentsChange, companyId = "" }: ExpenseFormProps) {
   const { t } = useLanguage();
+  const { categories } = useCategories();
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const isEditing = !!expense;
 
@@ -52,7 +54,7 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
     resolver: zodResolver(schema),
     defaultValues: {
       description: "", cost_center: "", amount: 0, payment_method: "pix",
-      category: "rent", installments: 1, is_fixed: false, is_personal: false,
+      category: categories[0]?.name || "", installments: 1, is_fixed: false, is_personal: false,
       is_recurring: false, recurrence_interval: "monthly",
     },
   });
@@ -75,7 +77,7 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
     } else if (open) {
       form.reset({
         description: "", cost_center: "", amount: 0, payment_method: "pix",
-        category: "rent", installments: 1, is_fixed: false, is_personal: false,
+        category: categories[0]?.name || "", installments: 1, is_fixed: false, is_personal: false,
         is_recurring: false, recurrence_interval: "monthly",
       });
       setPendingFiles([]);
@@ -150,8 +152,8 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
-                      {(["rent", "energy", "internet", "officeSupplies", "marketing", "transport", "food", "software"] as const).map((c) => (
-                        <SelectItem key={c} value={c}>{t(c)}</SelectItem>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
