@@ -1,118 +1,149 @@
 
-# Modulo de Cartoes -- CRUD Completo + Anexos
+# Importacao de Fatura com IA (Gemini Flash) + CSV Local
 
 ## Resumo
 
-Completar o modulo de cartoes seguindo o mesmo padrao ja implementado em receitas e despesas: visualizar detalhes, editar, excluir (com confirmacao), e anexar comprovantes. Isso se aplica tanto aos **cartoes** quanto as **transacoes do cartao**.
+Criar funcionalidade para importar faturas de cartao via PDF (usando Lovable AI / Gemini Flash para extracao) ou CSV (parsing local no frontend). O usuario faz upload do arquivo, revisa as transacoes extraidas em tabela editavel, renomeia descricoes, seleciona categorias, e confirma a importacao. O arquivo original fica armazenado para consulta.
 
 ---
 
-## 1. Cartoes (credit_cards)
+## 1. Edge Function -- `parse-invoice`
 
-### 1.1 Editar Cartao
+### `supabase/functions/parse-invoice/index.ts`
 
-- Modificar `CardForm.tsx` para aceitar prop opcional `card?` para modo edicao
-- Preencher campos com dados existentes quando editando
-- Titulo dinamico: "Novo Cartao" / "Editar Cartao"
+- Recebe `{ content: string }` (texto extraido do PDF via pdfjs-dist no frontend)
+- Envia para Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`) com model `google/gemini-2.5-flash`
+- Usa **tool calling** para retornar dados estruturados
+- Tool definition: `extract_transactions` com schema de array contendo `date`, `description`, `amount`, `installment_info`
+- Prompt especifico para faturas de cartao de credito brasileiras
+- Trata erros 429 (rate limit) e 402 (creditos insuficientes)
+- Retorna `{ transactions: [...] }`
 
-### 1.2 Excluir Cartao
+### `supabase/config.toml`
 
-- Reutilizar `DeleteConfirmDialog` existente
-- Ao excluir um cartao, excluir tambem suas transacoes e anexos associados
-- Mutation `deleteCard` na `CardsPage`
+Registrar a funcao:
 
-### 1.3 Detalhes do Cartao
-
-- Novo componente `CardDetailDialog.tsx` com dados em somente leitura (nome, bandeira, ultimos digitos, limite, saldo, dias de fechamento/vencimento)
-- Lista de anexos com download
-- Botao para editar a partir do detalhe
-
-### 1.4 Acoes no CardList
-
-- Adicionar 3 botoes de acao em cada card visual: Visualizar (Eye), Editar (Pencil), Excluir (Trash)
-- Posicionar no canto superior direito do card com icones brancos semi-transparentes
-- Callbacks: `onView`, `onEdit`, `onDelete`
-
-### 1.5 Anexos no Cartao
-
-- Reutilizar `FileAttachments` existente
-- Atualizar `recordType` para aceitar `"credit_card"` alem de `"revenue"` e `"expense"`
-- Secao de anexos no `CardForm` e no `CardDetailDialog`
+```text
+[functions.parse-invoice]
+verify_jwt = false
+```
 
 ---
 
-## 2. Transacoes do Cartao (card_transactions)
+## 2. Parser CSV no Frontend
 
-### 2.1 Editar Transacao
+### Novo: `src/lib/parseInvoiceCSV.ts`
 
-- Modificar `CardTransactions.tsx` para suportar edicao inline no dialog existente
-- Estado `editingTransaction` para preencher o formulario com dados existentes
-- Mutation `updateTransaction`
+- Detecta delimitador (`;` ou `,`)
+- Mapeia colunas por cabecalho com aliases flexiveis (data/date, descricao/description, valor/amount/value)
+- Normaliza datas (dd/MM/yyyy, yyyy-MM-dd)
+- Normaliza valores (virgula decimal, remove "R$")
+- Detecta parcelas no texto (ex: "PARCELA 3/10", "3 DE 10")
+- Retorna `ParsedTransaction[]`
 
-### 2.2 Excluir Transacao
+Tipo:
 
-- Reutilizar `DeleteConfirmDialog`
-- Mutation `deleteTransaction`
-
-### 2.3 Coluna de Acoes na Tabela
-
-- Adicionar coluna "Acoes" com botoes Editar (Pencil) e Excluir (Trash) em cada linha
-
----
-
-## 3. CardsPage -- Mutations completas
-
-Adicionar na `CardsPage.tsx`:
-
-- Estado `editingCard`, `viewingCard`, `deletingCard`
-- Mutation `updateCard` com `supabase.from("credit_cards").update(...)`
-- Mutation `deleteCard` com `supabase.from("credit_cards").delete()`
-- Funcoes de upload/delete de anexos via storage + tabela `attachments`
-- `handleSave` decide entre criar ou atualizar baseado na presenca de ID
+```text
+ParsedTransaction {
+  date: string        // YYYY-MM-DD
+  description: string
+  amount: number
+  installment_number?: number
+  installment_total?: number
+  category: string    // vazio por padrao
+  selected: boolean   // true por padrao
+}
+```
 
 ---
 
-## 4. Tipo FileAttachments -- Ampliar recordType
+## 3. Componente de Importacao
 
-Atualizar `FileAttachments.tsx`:
+### Novo: `src/components/cards/InvoiceImportDialog.tsx`
 
-- Mudar tipo `recordType` de `"revenue" | "expense"` para `"revenue" | "expense" | "credit_card" | "card_transaction"`
+Dialog com 2 etapas:
+
+**Etapa 1 -- Upload:**
+- Area de drag-and-drop ou botao para selecionar arquivo
+- Aceita `.pdf` e `.csv`, limite 20MB
+- Loading spinner durante processamento
+- Para PDF: usa `pdfjs-dist` para extrair texto no browser, envia texto para edge function `parse-invoice`
+- Para CSV: processa localmente via `parseInvoiceCSV`
+
+**Etapa 2 -- Revisao:**
+- Tabela editavel com colunas: Checkbox, Data, Descricao (Input), Categoria (Input), Valor, Parcela
+- Checkbox individual + "Selecionar Todos" / "Desselecionar Todos"
+- Resumo: X transacoes selecionadas, valor total
+- Botoes: "Cancelar" e "Importar Selecionados"
+
+Ao confirmar:
+- Insert batch em `card_transactions`
+- Salva arquivo original no bucket `attachments` com `record_type = 'card_invoice'`
+- Registra na tabela `attachments`
+- Invalida query de transacoes
 
 ---
 
-## 5. Traducoes
+## 4. Integracao
 
-Novas chaves:
+### Modificado: `src/components/cards/CardTransactions.tsx`
+
+- Adicionar botao "Importar Fatura" (icone Upload) ao lado de "Nova Transacao"
+- Renderizar `InvoiceImportDialog`
+
+### Modificado: `src/components/shared/FileAttachments.tsx`
+
+- Adicionar `"card_invoice"` ao tipo `recordType`
+
+---
+
+## 5. Dependencia
+
+- Instalar `pdfjs-dist` para extracao de texto do PDF no browser (necessario mesmo com IA, pois o texto e extraido localmente antes de enviar)
+
+---
+
+## 6. Traducoes
+
+Novas chaves em `src/i18n/translations.ts`:
 
 | Chave | pt-BR | en |
 |---|---|---|
-| editCard | Editar Cartao | Edit Card |
-| deleteCard | Excluir Cartao | Delete Card |
-| cardDetails | Detalhes do Cartao | Card Details |
-| cardUpdated | Cartao atualizado! | Card updated! |
-| cardDeleted | Cartao excluido! | Card deleted! |
-| transactionUpdated | Transacao atualizada! | Transaction updated! |
-| transactionDeleted | Transacao excluida! | Transaction deleted! |
-| editTransaction | Editar Transacao | Edit Transaction |
+| importInvoice | Importar Fatura | Import Invoice |
+| selectFile | Selecionar Arquivo | Select File |
+| dragDropFile | Arraste aqui ou clique para selecionar | Drag here or click to select |
+| supportedFormats | Formatos: PDF, CSV | Formats: PDF, CSV |
+| processing | Processando... | Processing... |
+| extractedTransactions | Transacoes Extraidas | Extracted Transactions |
+| selectAll | Selecionar Todos | Select All |
+| deselectAll | Desselecionar Todos | Deselect All |
+| importSelected | Importar Selecionados | Import Selected |
+| transactionsImported | Transacoes importadas! | Transactions imported! |
+| noTransactionsFound | Nenhuma transacao encontrada | No transactions found |
+| parsingError | Erro ao processar arquivo | Error parsing file |
+| reviewTransactions | Revisar Transacoes | Review Transactions |
+| totalSelected | selecionadas | selected |
 
 ---
 
-## Arquivos modificados
+## Arquivos criados/modificados
 
-- `src/components/cards/CardForm.tsx` -- modo edicao + anexos
-- `src/components/cards/CardList.tsx` -- botoes de acao (view, edit, delete)
-- `src/components/cards/CardTransactions.tsx` -- coluna acoes, edit/delete de transacoes
-- `src/pages/CardsPage.tsx` -- mutations update/delete, estados de modal, upload de anexos
-- `src/components/shared/FileAttachments.tsx` -- ampliar `recordType`
-- `src/i18n/translations.ts` -- novas chaves
-- Novo: `src/components/cards/CardDetailDialog.tsx` -- modal de detalhes do cartao
+- **Novo:** `supabase/functions/parse-invoice/index.ts`
+- **Novo:** `src/lib/parseInvoiceCSV.ts`
+- **Novo:** `src/components/cards/InvoiceImportDialog.tsx`
+- **Modificado:** `supabase/config.toml`
+- **Modificado:** `src/components/cards/CardTransactions.tsx`
+- **Modificado:** `src/components/shared/FileAttachments.tsx`
+- **Modificado:** `src/i18n/translations.ts`
+
+---
 
 ## Fluxo do usuario
 
-1. Na lista de cartoes, cada card tem 3 icones de acao: visualizar, editar, excluir
-2. **Visualizar**: abre modal com todos os dados do cartao, comprovantes e botao para editar
-3. **Editar**: abre formulario preenchido com os dados atuais, incluindo gerenciamento de anexos
-4. **Excluir**: abre AlertDialog de confirmacao; ao confirmar, exclui cartao + transacoes + anexos
-5. Na tabela de transacoes, cada linha tem botoes de editar e excluir
-6. **Editar transacao**: abre dialog preenchido para alterar dados
-7. **Excluir transacao**: abre AlertDialog de confirmacao
+1. Na area de transacoes do cartao, clica em "Importar Fatura"
+2. Seleciona arquivo PDF ou CSV
+3. Sistema extrai transacoes (PDF via IA, CSV localmente)
+4. Tabela de revisao aparece com transacoes encontradas
+5. Usuario renomeia descricoes, digita categorias, desmarca itens
+6. Clica em "Importar Selecionados"
+7. Transacoes salvas e arquivo original armazenado
