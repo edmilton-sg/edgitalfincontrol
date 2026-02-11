@@ -1,5 +1,5 @@
 import { useLanguage } from "@/i18n/LanguageContext";
-import { CreditCard } from "lucide-react";
+import { CreditCard, Eye, Pencil, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -20,6 +20,9 @@ interface CardListProps {
   isLoading: boolean;
   selectedCardId: string | null;
   onSelectCard: (id: string) => void;
+  onView?: (card: CreditCardData) => void;
+  onEdit?: (card: CreditCardData) => void;
+  onDelete?: (card: CreditCardData) => void;
 }
 
 const brandGradients: Record<string, string> = {
@@ -29,7 +32,7 @@ const brandGradients: Record<string, string> = {
   amex: "from-emerald-500 to-emerald-800",
 };
 
-export function CardList({ cards, isLoading, selectedCardId, onSelectCard }: CardListProps) {
+export function CardList({ cards, isLoading, selectedCardId, onSelectCard, onView, onEdit, onDelete }: CardListProps) {
   const { t } = useLanguage();
 
   if (isLoading) {
@@ -67,7 +70,32 @@ export function CardList({ cards, isLoading, selectedCardId, onSelectCard }: Car
               "hover:scale-[1.01] hover:shadow-lg"
             )}
           >
-            <div className="flex justify-between items-start mb-6">
+            {/* Action buttons */}
+            <div className="absolute top-2 right-2 flex gap-1">
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); onView?.(card); }}
+                className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <Eye className="h-3.5 w-3.5 text-white/70" />
+              </span>
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); onEdit?.(card); }}
+                className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <Pencil className="h-3.5 w-3.5 text-white/70" />
+              </span>
+              <span
+                role="button"
+                onClick={(e) => { e.stopPropagation(); onDelete?.(card); }}
+                className="p-1.5 rounded-full hover:bg-white/20 transition-colors"
+              >
+                <Trash2 className="h-3.5 w-3.5 text-white/70" />
+              </span>
+            </div>
+
+            <div className="flex justify-between items-start mb-6 pr-24">
               <span className="text-sm font-medium opacity-90">{card.name}</span>
               <span className="text-xs uppercase font-bold opacity-80">{card.brand}</span>
             </div>
