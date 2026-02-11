@@ -1,63 +1,43 @@
 
-# Corrigir Exclusao de Cartao
 
-## Problema
+# Remover Campo "Fixa" de Despesas (Redundancia com Recorrente)
 
-Race condition: o `AlertDialogAction` fecha o dialog automaticamente ao ser clicado, o que dispara `onOpenChange(false)` e seta `deletingCard = null` antes da mutation executar. A mutation verifica `if (!deletingCard) return` e nao faz nada, mas o `onSuccess` dispara mesmo assim mostrando o toast de sucesso.
+## Resumo
 
-## Solucao
+O campo "Fixa" (is_fixed) e o campo "Recorrente" (is_recurring) representam conceitos sobrepostos. A proposta e remover o campo "Fixa" de toda a interface, mantendo apenas "Recorrente" com seus intervalos (semanal, mensal, anual).
 
-Modificar a mutation `deleteCard` em `src/pages/CardsPage.tsx` para receber o `cardId` como parametro direto, em vez de depender do estado `deletingCard`:
+## Alteracoes
 
-1. Alterar `mutationFn` para receber `(cardId: string)` como argumento
-2. Usar esse `cardId` diretamente nas queries de delete (transactions, attachments, card)
-3. No `onConfirm` do `DeleteConfirmDialog`, passar `deletingCard.id` diretamente: `deleteCard.mutate(deletingCard!.id)`
-4. No `onSuccess`, limpar o estado normalmente
+### 1. Formulario de Despesas (`ExpenseForm.tsx`)
+- Remover `is_fixed` do schema Zod e dos defaultValues
+- Remover o Switch "Fixa" do formulario (linhas 207-212)
+- No onSubmit, setar `is_fixed: false` fixo no objeto Expense para compatibilidade com o banco
 
-## Detalhes tecnicos
+### 2. Tabela de Despesas (`ExpenseTable.tsx`)
+- Remover a coluna "Fixa" do header
+- Remover a celula com icone Check/X de is_fixed
+- Ajustar o colSpan do footer
 
-### Arquivo: `src/pages/CardsPage.tsx`
+### 3. Dialog de Detalhes (`ExpenseDetailDialog.tsx`)
+- Remover a linha que exibe "Fixa" com Check/X
 
-Antes:
-```typescript
-const deleteCard = useMutation({
-  mutationFn: async () => {
-    if (!deletingCard) return;
-    await supabase.from("card_transactions").delete().eq("card_id", deletingCard.id);
-    await supabase.from("attachments").delete().eq("record_id", deletingCard.id)...;
-    const { error } = await supabase.from("credit_cards").delete().eq("id", deletingCard.id);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    ...
-    setDeletingCard(null);
-  },
-});
-```
+### 4. Filtros de Despesas (`ExpenseFilters.tsx`)
+- Remover o filtro de tipo (fixo/variavel) completamente
+- Remover as props `typeFilter` e `onTypeChange`
 
-Depois:
-```typescript
-const deleteCard = useMutation({
-  mutationFn: async (cardId: string) => {
-    await supabase.from("card_transactions").delete().eq("card_id", cardId);
-    await supabase.from("attachments").delete().eq("record_id", cardId).eq("record_type", "credit_card");
-    const { error } = await supabase.from("credit_cards").delete().eq("id", cardId);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["credit_cards"] });
-    if (selectedCardId === deletingCard?.id) setSelectedCardId(null);
-    setDeletingCard(null);
-    toast({ title: t("cardDeleted") });
-  },
-});
-```
+### 5. Pagina de Despesas (`ExpensesPage.tsx`)
+- Remover o estado `typeFilter` e `setTypeFilter`
+- Remover a logica de filtro `matchType` no useMemo
+- Remover as props de tipo do componente `ExpenseFilters`
 
-E na chamada:
-```typescript
-onConfirm={() => deleteCard.mutate(deletingCard!.id)}
-```
+### 6. Tipo Expense (`mockData.ts`)
+- Manter `is_fixed` no tipo por compatibilidade com o banco, mas ele nao sera mais exibido/editado na interface
 
 ## Arquivos modificados
 
-- `src/pages/CardsPage.tsx` (unica alteracao, ~5 linhas)
+- `src/components/expenses/ExpenseForm.tsx`
+- `src/components/expenses/ExpenseTable.tsx`
+- `src/components/expenses/ExpenseDetailDialog.tsx`
+- `src/components/expenses/ExpenseFilters.tsx`
+- `src/pages/ExpensesPage.tsx`
+
