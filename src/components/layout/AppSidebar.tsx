@@ -2,9 +2,11 @@ import {
   LayoutDashboard, ArrowRightLeft, TrendingUp, TrendingDown,
   CreditCard, FileBarChart, Receipt, Users, Briefcase,
   ClipboardList, Settings, FileText, ChevronLeft, ChevronRight,
+  UserPlus, ShieldCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import type { TranslationKey } from "@/i18n/translations";
 
@@ -33,6 +35,16 @@ const navItems: { key: TranslationKey; icon: React.ElementType; path: string }[]
 
 export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavClick }: AppSidebarProps) {
   const { t } = useLanguage();
+  const { role } = useAuth();
+
+  // Role-specific nav items
+  const roleItems: { key: TranslationKey; icon: React.ElementType; path: string }[] = [];
+  if (role === "company_owner") {
+    roleItems.push({ key: "accessRequests", icon: ShieldCheck, path: "/access-requests" });
+  }
+  if (role === "accountant") {
+    roleItems.push({ key: "requestAccess", icon: UserPlus, path: "/request-access" });
+  }
 
   const isVisible = isMobile ? mobileOpen : true;
   const sidebarWidth = collapsed ? "w-16" : "w-60";
@@ -76,6 +88,24 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavCli
             {!collapsed && <span>{t(item.key)}</span>}
           </NavLink>
         ))}
+
+        {roleItems.length > 0 && (
+          <>
+            <div className="my-2 border-t border-sidebar-border" />
+            {roleItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                activeClassName="bg-sidebar-accent text-sidebar-primary font-medium"
+                onClick={onNavClick}
+              >
+                <item.icon size={20} className="shrink-0" />
+                {!collapsed && <span>{t(item.key)}</span>}
+              </NavLink>
+            ))}
+          </>
+        )}
       </nav>
     </aside>
   );

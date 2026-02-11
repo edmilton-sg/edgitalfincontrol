@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { Search, Bell, Moon, Sun, Globe, Menu, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,8 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { useTheme } from "@/hooks/useTheme";
 import { useAuth } from "@/contexts/AuthContext";
 import { CompanySelector } from "./CompanySelector";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 interface AppHeaderProps {
   onMenuClick?: () => void;
@@ -14,7 +17,35 @@ interface AppHeaderProps {
 export function AppHeader({ onMenuClick }: AppHeaderProps) {
   const { language, setLanguage, t } = useLanguage();
   const { isDark, toggleTheme } = useTheme();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user, role } = useAuth();
+  const navigate = useNavigate();
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    if (!user || role !== "company_owner") {
+      setPendingCount(0);
+      return;
+    }
+
+    const fetchCount = async () => {
+      const { data: myCompanies } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("owner_id", user.id);
+
+      if (!myCompanies || myCompanies.length === 0) return;
+
+      const { count } = await supabase
+        .from("access_requests")
+        .select("id", { count: "exact", head: true })
+        .in("company_id", myCompanies.map((c) => c.id))
+        .eq("status", "pending");
+
+      setPendingCount(count ?? 0);
+    };
+
+    fetchCount();
+  }, [user, role]);
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()
@@ -50,11 +81,13 @@ export function AppHeader({ onMenuClick }: AppHeaderProps) {
           {isDark ? <Sun size={18} /> : <Moon size={18} />}
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className="relative" onClick={() => role === "company_owner" ? navigate("/access-requests") : undefined}>
           <Bell size={18} />
-          <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
-            3
-          </span>
+          {pendingCount > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] text-destructive-foreground">
+              {pendingCount}
+            </span>
+          )}
         </Button>
 
         <Avatar className="h-9 w-9 cursor-pointer">
