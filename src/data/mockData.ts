@@ -41,6 +41,9 @@ export interface Revenue {
   net_amount: number;
   payment_method: PaymentMethod;
   status: TransactionStatus;
+  is_recurring: boolean;
+  recurrence_interval?: string;
+  recurrence_group_id?: string;
 }
 
 // Expense types
@@ -59,6 +62,21 @@ export interface Expense {
   installment_total: number;
   is_fixed: boolean;
   is_personal: boolean;
+  is_recurring: boolean;
+  recurrence_interval?: string;
+  recurrence_group_id?: string;
+}
+
+export interface Attachment {
+  id: string;
+  record_type: string;
+  record_id: string;
+  company_id: string;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  content_type: string;
+  created_at: string;
 }
 
 export const revenuesData: Revenue[] = [];

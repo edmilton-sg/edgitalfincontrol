@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -13,7 +14,8 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import type { Expense, PaymentMethod, ExpenseCategory } from "@/data/mockData";
+import { FileAttachments } from "@/components/shared/FileAttachments";
+import type { Expense, PaymentMethod, ExpenseCategory, Attachment } from "@/data/mockData";
 
 const schema = z.object({
   date: z.date({ required_error: "Required" }),
@@ -25,6 +27,8 @@ const schema = z.object({
   installments: z.coerce.number().int().min(1).max(48),
   is_fixed: z.boolean(),
   is_personal: z.boolean(),
+  is_recurring: z.boolean(),
+  recurrence_interval: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -32,19 +36,57 @@ type FormValues = z.infer<typeof schema>;
 interface ExpenseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (expense: Expense) => void;
+  onSave: (expense: Expense, pendingFiles: File[]) => void;
+  expense?: Expense | null;
+  attachments?: Attachment[];
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
+  companyId?: string;
 }
 
-export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
+export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments = [], onAttachmentsChange, companyId = "" }: ExpenseFormProps) {
   const { t } = useLanguage();
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const isEditing = !!expense;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { description: "", cost_center: "", amount: 0, payment_method: "pix", category: "rent", installments: 1, is_fixed: false, is_personal: false },
+    defaultValues: {
+      description: "", cost_center: "", amount: 0, payment_method: "pix",
+      category: "rent", installments: 1, is_fixed: false, is_personal: false,
+      is_recurring: false, recurrence_interval: "monthly",
+    },
   });
 
+  useEffect(() => {
+    if (open && expense) {
+      form.reset({
+        date: new Date(expense.date + "T00:00:00"),
+        description: expense.description,
+        category: expense.category as any,
+        cost_center: expense.cost_center,
+        amount: expense.amount,
+        payment_method: expense.payment_method as any,
+        installments: expense.installments,
+        is_fixed: expense.is_fixed,
+        is_personal: expense.is_personal,
+        is_recurring: expense.is_recurring,
+        recurrence_interval: expense.recurrence_interval || "monthly",
+      });
+    } else if (open) {
+      form.reset({
+        description: "", cost_center: "", amount: 0, payment_method: "pix",
+        category: "rent", installments: 1, is_fixed: false, is_personal: false,
+        is_recurring: false, recurrence_interval: "monthly",
+      });
+      setPendingFiles([]);
+    }
+  }, [open, expense]);
+
+  const isRecurring = form.watch("is_recurring");
+
   function onSubmit(values: FormValues) {
-    const expense: Expense = {
-      id: Date.now(),
+    const exp: Expense = {
+      id: expense?.id || Date.now(),
       date: format(values.date, "yyyy-MM-dd"),
       description: values.description,
       category: values.category as ExpenseCategory,
@@ -52,13 +94,16 @@ export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
       amount: values.amount,
       payment_method: values.payment_method as PaymentMethod,
       installments: values.installments,
-      installment_number: 1,
+      installment_number: expense?.installment_number || 1,
       installment_total: values.installments,
       is_fixed: values.is_fixed,
       is_personal: values.is_personal,
+      is_recurring: values.is_recurring,
+      recurrence_interval: values.is_recurring ? values.recurrence_interval : undefined,
+      recurrence_group_id: expense?.recurrence_group_id,
     };
-    onSave(expense);
-    form.reset();
+    onSave(exp, pendingFiles);
+    setPendingFiles([]);
     onOpenChange(false);
   }
 
@@ -66,7 +111,7 @@ export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("newExpense")}</DialogTitle>
+          <DialogTitle>{isEditing ? t("editExpense") : t("newExpense")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -102,7 +147,7 @@ export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
               <FormField control={form.control} name="category" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("category")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       {(["rent", "energy", "internet", "officeSupplies", "marketing", "transport", "food", "software"] as const).map((c) => (
@@ -133,7 +178,7 @@ export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
               <FormField control={form.control} name="payment_method" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("paymentMethod")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="pix">{t("pix")}</SelectItem>
@@ -169,6 +214,44 @@ export function ExpenseForm({ open, onOpenChange, onSave }: ExpenseFormProps) {
                   <FormLabel className="cursor-pointer">{t("personal")}</FormLabel>
                 </FormItem>
               )} />
+            </div>
+
+            {/* Recurrence */}
+            <div className="space-y-3 rounded-md border p-3">
+              <FormField control={form.control} name="is_recurring" render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  <FormLabel className="cursor-pointer">{t("recurring")}</FormLabel>
+                </FormItem>
+              )} />
+              {isRecurring && (
+                <FormField control={form.control} name="recurrence_interval" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("recurrenceInterval")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "monthly"}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="monthly">{t("monthly")}</SelectItem>
+                        <SelectItem value="weekly">{t("weekly")}</SelectItem>
+                        <SelectItem value="yearly">{t("yearly")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              )}
+            </div>
+
+            {/* Attachments */}
+            <div className="border-t pt-4">
+              <FileAttachments
+                attachments={attachments}
+                recordId={isEditing ? (expense!.id as string) : undefined}
+                recordType="expense"
+                companyId={companyId}
+                onAttachmentsChange={onAttachmentsChange}
+                pendingFiles={pendingFiles}
+                onPendingFilesChange={setPendingFiles}
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
