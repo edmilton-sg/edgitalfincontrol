@@ -9,13 +9,11 @@ interface ExpenseFiltersProps {
   onSearchChange: (v: string) => void;
   categoryFilter: ExpenseCategory | "all";
   onCategoryChange: (v: ExpenseCategory | "all") => void;
-  typeFilter: "all" | "fixed" | "variable";
-  onTypeChange: (v: "all" | "fixed" | "variable") => void;
   periodFilter: string;
   onPeriodChange: (v: string) => void;
 }
 
-export function ExpenseFilters({ search, onSearchChange, categoryFilter, onCategoryChange, typeFilter, onTypeChange, periodFilter, onPeriodChange }: ExpenseFiltersProps) {
+export function ExpenseFilters({ search, onSearchChange, categoryFilter, onCategoryChange, periodFilter, onPeriodChange }: ExpenseFiltersProps) {
   const { t } = useLanguage();
   const { categories } = useCategories();
 
@@ -36,16 +34,6 @@ export function ExpenseFilters({ search, onSearchChange, categoryFilter, onCateg
           {categories.map((c) => (
             <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
           ))}
-        </SelectContent>
-      </Select>
-      <Select value={typeFilter} onValueChange={(v) => onTypeChange(v as "all" | "fixed" | "variable")}>
-        <SelectTrigger className="sm:w-[160px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">{t("allTypes")}</SelectItem>
-          <SelectItem value="fixed">{t("fixedExpenses")}</SelectItem>
-          <SelectItem value="variable">{t("variableExpenses")}</SelectItem>
         </SelectContent>
       </Select>
       <Select value={periodFilter} onValueChange={onPeriodChange}>

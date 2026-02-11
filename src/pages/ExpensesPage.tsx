@@ -21,7 +21,6 @@ export default function ExpensesPage() {
   const [formOpen, setFormOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | "all">("all");
-  const [typeFilter, setTypeFilter] = useState<"all" | "fixed" | "variable">("all");
   const [periodFilter, setPeriodFilter] = useState("all");
 
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
@@ -161,11 +160,10 @@ export default function ExpensesPage() {
     return expenses.filter((e) => {
       const matchSearch = !search || e.description.toLowerCase().includes(search.toLowerCase());
       const matchCategory = categoryFilter === "all" || e.category === categoryFilter;
-      const matchType = typeFilter === "all" || (typeFilter === "fixed" ? e.is_fixed : !e.is_fixed);
       const matchPeriod = periodFilter === "all" || e.date.startsWith(periodFilter);
-      return matchSearch && matchCategory && matchType && matchPeriod;
+      return matchSearch && matchCategory && matchPeriod;
     });
-  }, [expenses, search, categoryFilter, typeFilter, periodFilter]);
+  }, [expenses, search, categoryFilter, periodFilter]);
 
   const handleSave = (expense: Expense, pendingFiles: File[]) => {
     if (editingExpense) {
@@ -212,7 +210,6 @@ export default function ExpensesPage() {
       <ExpenseFilters
         search={search} onSearchChange={setSearch}
         categoryFilter={categoryFilter} onCategoryChange={setCategoryFilter}
-        typeFilter={typeFilter} onTypeChange={setTypeFilter}
         periodFilter={periodFilter} onPeriodChange={setPeriodFilter}
       />
 

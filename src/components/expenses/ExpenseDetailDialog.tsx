@@ -42,10 +42,6 @@ export function ExpenseDetailDialog({ expense, open, onOpenChange, onEdit, attac
             <Row label={t("installment")} value={`${expense.installment_number}/${expense.installment_total}`} />
           )}
           <div className="flex justify-between">
-            <span className="text-muted-foreground">{t("fixed")}</span>
-            {expense.is_fixed ? <Check className="h-4 w-4 text-primary" /> : <X className="h-4 w-4 text-muted-foreground" />}
-          </div>
-          <div className="flex justify-between">
             <span className="text-muted-foreground">{t("personal")}</span>
             {expense.is_personal ? <Check className="h-4 w-4 text-accent-foreground" /> : <X className="h-4 w-4 text-muted-foreground" />}
           </div>
