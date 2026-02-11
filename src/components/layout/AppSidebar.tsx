@@ -42,9 +42,6 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavCli
   if (role === "company_owner") {
     roleItems.push({ key: "accessRequests", icon: ShieldCheck, path: "/access-requests" });
   }
-  if (role === "accountant") {
-    roleItems.push({ key: "requestAccess", icon: UserPlus, path: "/request-access" });
-  }
 
   const isVisible = isMobile ? mobileOpen : true;
   const sidebarWidth = collapsed ? "w-16" : "w-60";
