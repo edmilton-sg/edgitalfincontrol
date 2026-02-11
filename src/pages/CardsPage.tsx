@@ -85,14 +85,10 @@ export default function CardsPage() {
   });
 
   const deleteCard = useMutation({
-    mutationFn: async () => {
-      if (!deletingCard) return;
-      // Delete transactions first
-      await supabase.from("card_transactions").delete().eq("card_id", deletingCard.id);
-      // Delete attachments records
-      await supabase.from("attachments").delete().eq("record_id", deletingCard.id).eq("record_type", "credit_card");
-      // Delete card
-      const { error } = await supabase.from("credit_cards").delete().eq("id", deletingCard.id);
+    mutationFn: async (cardId: string) => {
+      await supabase.from("card_transactions").delete().eq("card_id", cardId);
+      await supabase.from("attachments").delete().eq("record_id", cardId).eq("record_type", "credit_card");
+      const { error } = await supabase.from("credit_cards").delete().eq("id", cardId);
       if (error) throw error;
     },
     onSuccess: () => {
@@ -157,7 +153,7 @@ export default function CardsPage() {
       <DeleteConfirmDialog
         open={!!deletingCard}
         onOpenChange={(o) => { if (!o) setDeletingCard(null); }}
-        onConfirm={() => deleteCard.mutate()}
+        onConfirm={() => deleteCard.mutate(deletingCard!.id)}
         loading={deleteCard.isPending}
       />
     </div>
