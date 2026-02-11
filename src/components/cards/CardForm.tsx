@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -19,18 +20,46 @@ const schema = z.object({
 
 type FormValues = z.infer<typeof schema>;
 
+interface CardData {
+  id: string;
+  name: string;
+  brand: string;
+  last_digits: string | null;
+  card_limit: number;
+  closing_day: number;
+  due_day: number;
+}
+
 interface CardFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSave: (card: { name: string; brand: string; last_digits: string; card_limit: number; closing_day: number; due_day: number }) => void;
+  card?: CardData | null;
 }
 
-export function CardForm({ open, onOpenChange, onSave }: CardFormProps) {
+export function CardForm({ open, onOpenChange, onSave, card }: CardFormProps) {
   const { t } = useLanguage();
+  const isEditing = !!card;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: { name: "", brand: "visa", last_digits: "", card_limit: 0, closing_day: 25, due_day: 5 },
   });
+
+  useEffect(() => {
+    if (open && card) {
+      form.reset({
+        name: card.name,
+        brand: card.brand as "visa" | "mastercard" | "elo" | "amex",
+        last_digits: card.last_digits || "",
+        card_limit: card.card_limit,
+        closing_day: card.closing_day,
+        due_day: card.due_day,
+      });
+    } else if (open && !card) {
+      form.reset({ name: "", brand: "visa", last_digits: "", card_limit: 0, closing_day: 25, due_day: 5 });
+    }
+  }, [open, card, form]);
 
   function onSubmit(values: FormValues) {
     onSave(values as { name: string; brand: string; last_digits: string; card_limit: number; closing_day: number; due_day: number });
@@ -42,7 +71,7 @@ export function CardForm({ open, onOpenChange, onSave }: CardFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>{t("newCard")}</DialogTitle>
+          <DialogTitle>{isEditing ? t("editCard") : t("newCard")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -58,7 +87,7 @@ export function CardForm({ open, onOpenChange, onSave }: CardFormProps) {
               <FormField control={form.control} name="brand" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("cardBrand")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="visa">{t("visa")}</SelectItem>

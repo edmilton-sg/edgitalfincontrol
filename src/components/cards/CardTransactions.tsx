@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { format } from "date-fns";
 
 interface CardTransactionsProps {
@@ -17,12 +18,25 @@ interface CardTransactionsProps {
   companyId: string;
 }
 
+interface TransactionForm {
+  date: string;
+  description: string;
+  amount: string;
+  category: string;
+  installment_number: string;
+  installment_total: string;
+}
+
+const emptyForm: TransactionForm = { date: "", description: "", amount: "", category: "", installment_number: "1", installment_total: "1" };
+
 export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
   const { t } = useLanguage();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [addOpen, setAddOpen] = useState(false);
-  const [form, setForm] = useState({ date: "", description: "", amount: "", category: "", installment_number: "1", installment_total: "1" });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingTx, setEditingTx] = useState<string | null>(null);
+  const [deletingTxId, setDeletingTxId] = useState<string | null>(null);
+  const [form, setForm] = useState<TransactionForm>(emptyForm);
 
   const { data: transactions = [] } = useQuery({
     queryKey: ["card_transactions", cardId],
@@ -53,11 +67,75 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
-      setAddOpen(false);
-      setForm({ date: "", description: "", amount: "", category: "", installment_number: "1", installment_total: "1" });
+      closeDialog();
       toast({ title: t("transactionAdded") });
     },
   });
+
+  const updateTx = useMutation({
+    mutationFn: async () => {
+      if (!editingTx) return;
+      const { error } = await supabase.from("card_transactions").update({
+        date: form.date,
+        description: form.description,
+        amount: parseFloat(form.amount),
+        category: form.category || null,
+        installment_number: parseInt(form.installment_number),
+        installment_total: parseInt(form.installment_total),
+      }).eq("id", editingTx);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      closeDialog();
+      toast({ title: t("transactionUpdated") });
+    },
+  });
+
+  const deleteTx = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("card_transactions").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      setDeletingTxId(null);
+      toast({ title: t("transactionDeleted") });
+    },
+  });
+
+  function openNew() {
+    setEditingTx(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  }
+
+  function openEdit(tx: typeof transactions[0]) {
+    setEditingTx(tx.id);
+    setForm({
+      date: tx.date,
+      description: tx.description,
+      amount: String(tx.amount),
+      category: tx.category || "",
+      installment_number: String(tx.installment_number ?? 1),
+      installment_total: String(tx.installment_total ?? 1),
+    });
+    setDialogOpen(true);
+  }
+
+  function closeDialog() {
+    setDialogOpen(false);
+    setEditingTx(null);
+    setForm(emptyForm);
+  }
+
+  function handleSave() {
+    if (editingTx) {
+      updateTx.mutate();
+    } else {
+      addTx.mutate();
+    }
+  }
 
   const total = transactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
 
@@ -65,7 +143,7 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">{t("cardTransactions")}</CardTitle>
-        <Button size="sm" onClick={() => setAddOpen(true)}>
+        <Button size="sm" onClick={openNew}>
           <Plus className="mr-1 h-3 w-3" />
           {t("newTransaction")}
         </Button>
@@ -79,12 +157,13 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
               <TableHead>{t("category")}</TableHead>
               <TableHead>{t("installment")}</TableHead>
               <TableHead className="text-right">{t("amount")}</TableHead>
+              <TableHead className="w-20">{t("actions")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {transactions.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                   {t("noTransactions")}
                 </TableCell>
               </TableRow>
@@ -98,6 +177,16 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
                   <TableCell className="text-right font-medium">
                     R$ {Number(tx.amount).toFixed(2)}
                   </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}>
+                        <Pencil className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingTxId(tx.id)}>
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  </TableCell>
                 </TableRow>
               ))
             )}
@@ -107,16 +196,17 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
               <TableRow>
                 <TableCell colSpan={4} className="font-semibold">{t("totalAmount")}</TableCell>
                 <TableCell className="text-right font-bold">R$ {total.toFixed(2)}</TableCell>
+                <TableCell />
               </TableRow>
             </TableFooter>
           )}
         </Table>
       </CardContent>
 
-      <Dialog open={addOpen} onOpenChange={setAddOpen}>
+      <Dialog open={dialogOpen} onOpenChange={(o) => { if (!o) closeDialog(); else setDialogOpen(true); }}>
         <DialogContent className="sm:max-w-[400px]">
           <DialogHeader>
-            <DialogTitle>{t("newTransaction")}</DialogTitle>
+            <DialogTitle>{editingTx ? t("editTransaction") : t("newTransaction")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <div>
@@ -146,14 +236,21 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
               </div>
             </div>
             <div className="flex justify-end gap-3 pt-2">
-              <Button variant="outline" onClick={() => setAddOpen(false)}>{t("cancel")}</Button>
-              <Button onClick={() => addTx.mutate()} disabled={!form.date || !form.description || !form.amount}>
+              <Button variant="outline" onClick={closeDialog}>{t("cancel")}</Button>
+              <Button onClick={handleSave} disabled={!form.date || !form.description || !form.amount}>
                 {t("save")}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
+
+      <DeleteConfirmDialog
+        open={!!deletingTxId}
+        onOpenChange={(o) => { if (!o) setDeletingTxId(null); }}
+        onConfirm={() => deletingTxId && deleteTx.mutate(deletingTxId)}
+        loading={deleteTx.isPending}
+      />
     </Card>
   );
 }
