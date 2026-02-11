@@ -192,6 +192,8 @@ export const translations = {
     requestPending: "Pendente",
     requestApprovedStatus: "Aprovada",
     requestRejectedStatus: "Rejeitada",
+    manageCompanyAccess: "Gerenciar acesso a empresas",
+    manageCompanyAccessDesc: "Solicite vinculação a novas empresas pelo CNPJ",
   },
   en: {
     dashboard: "Dashboard",
@@ -369,6 +371,8 @@ export const translations = {
     requestPending: "Pending",
     requestApprovedStatus: "Approved",
     requestRejectedStatus: "Rejected",
+    manageCompanyAccess: "Manage company access",
+    manageCompanyAccessDesc: "Request access to new companies by tax ID",
   },
 } as const;
 
