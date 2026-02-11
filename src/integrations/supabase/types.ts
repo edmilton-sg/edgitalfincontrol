@@ -52,6 +52,42 @@ export type Database = {
           },
         ]
       }
+      attachments: {
+        Row: {
+          company_id: string
+          content_type: string
+          created_at: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          record_id: string
+          record_type: string
+        }
+        Insert: {
+          company_id: string
+          content_type: string
+          created_at?: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          record_id: string
+          record_type: string
+        }
+        Update: {
+          company_id?: string
+          content_type?: string
+          created_at?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          record_id?: string
+          record_type?: string
+        }
+        Relationships: []
+      }
       card_transactions: {
         Row: {
           amount: number
@@ -299,7 +335,10 @@ export type Database = {
           installments: number | null
           is_fixed: boolean | null
           is_personal: boolean | null
+          is_recurring: boolean
           payment_method: string | null
+          recurrence_group_id: string | null
+          recurrence_interval: string | null
         }
         Insert: {
           amount?: number
@@ -315,7 +354,10 @@ export type Database = {
           installments?: number | null
           is_fixed?: boolean | null
           is_personal?: boolean | null
+          is_recurring?: boolean
           payment_method?: string | null
+          recurrence_group_id?: string | null
+          recurrence_interval?: string | null
         }
         Update: {
           amount?: number
@@ -331,7 +373,10 @@ export type Database = {
           installments?: number | null
           is_fixed?: boolean | null
           is_personal?: boolean | null
+          is_recurring?: boolean
           payment_method?: string | null
+          recurrence_group_id?: string | null
+          recurrence_interval?: string | null
         }
         Relationships: [
           {
@@ -377,8 +422,11 @@ export type Database = {
           fee_amount: number
           gross_amount: number
           id: string
+          is_recurring: boolean
           net_amount: number
           payment_method: string | null
+          recurrence_group_id: string | null
+          recurrence_interval: string | null
           status: string
         }
         Insert: {
@@ -390,8 +438,11 @@ export type Database = {
           fee_amount?: number
           gross_amount?: number
           id?: string
+          is_recurring?: boolean
           net_amount?: number
           payment_method?: string | null
+          recurrence_group_id?: string | null
+          recurrence_interval?: string | null
           status?: string
         }
         Update: {
@@ -403,8 +454,11 @@ export type Database = {
           fee_amount?: number
           gross_amount?: number
           id?: string
+          is_recurring?: boolean
           net_amount?: number
           payment_method?: string | null
+          recurrence_group_id?: string | null
+          recurrence_interval?: string | null
           status?: string
         }
         Relationships: [

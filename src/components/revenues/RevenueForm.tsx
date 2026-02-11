@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -9,10 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import type { Revenue, PaymentMethod, TransactionStatus } from "@/data/mockData";
+import { FileAttachments } from "@/components/shared/FileAttachments";
+import type { Revenue, PaymentMethod, TransactionStatus, Attachment } from "@/data/mockData";
 
 const schema = z.object({
   date: z.date({ required_error: "Required" }),
@@ -22,6 +25,8 @@ const schema = z.object({
   fee_amount: z.coerce.number().min(0),
   payment_method: z.enum(["pix", "bankSlip", "creditCard", "transfer", "cash"]),
   status: z.enum(["paid", "pending", "overdue"]),
+  is_recurring: z.boolean(),
+  recurrence_interval: z.string().optional(),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -29,23 +34,56 @@ type FormValues = z.infer<typeof schema>;
 interface RevenueFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSave: (revenue: Revenue) => void;
+  onSave: (revenue: Revenue, pendingFiles: File[]) => void;
+  revenue?: Revenue | null;
+  attachments?: Attachment[];
+  onAttachmentsChange?: (attachments: Attachment[]) => void;
+  companyId?: string;
 }
 
-export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
+export function RevenueForm({ open, onOpenChange, onSave, revenue, attachments = [], onAttachmentsChange, companyId = "" }: RevenueFormProps) {
   const { t } = useLanguage();
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const isEditing = !!revenue;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { description: "", client: "", gross_amount: 0, fee_amount: 0, payment_method: "pix", status: "pending" },
+    defaultValues: {
+      description: "", client: "", gross_amount: 0, fee_amount: 0,
+      payment_method: "pix", status: "pending", is_recurring: false, recurrence_interval: "monthly",
+    },
   });
+
+  useEffect(() => {
+    if (open && revenue) {
+      form.reset({
+        date: new Date(revenue.date + "T00:00:00"),
+        description: revenue.description,
+        client: revenue.client,
+        gross_amount: revenue.gross_amount,
+        fee_amount: revenue.fee_amount,
+        payment_method: revenue.payment_method,
+        status: revenue.status,
+        is_recurring: revenue.is_recurring,
+        recurrence_interval: revenue.recurrence_interval || "monthly",
+      });
+    } else if (open) {
+      form.reset({
+        description: "", client: "", gross_amount: 0, fee_amount: 0,
+        payment_method: "pix", status: "pending", is_recurring: false, recurrence_interval: "monthly",
+      });
+      setPendingFiles([]);
+    }
+  }, [open, revenue]);
 
   const grossAmount = form.watch("gross_amount") || 0;
   const feeAmount = form.watch("fee_amount") || 0;
   const netAmount = grossAmount - feeAmount;
+  const isRecurring = form.watch("is_recurring");
 
   function onSubmit(values: FormValues) {
-    const revenue: Revenue = {
-      id: Date.now(),
+    const rev: Revenue = {
+      id: revenue?.id || Date.now(),
       date: format(values.date, "yyyy-MM-dd"),
       description: values.description,
       client: values.client,
@@ -54,9 +92,12 @@ export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
       net_amount: values.gross_amount - values.fee_amount,
       payment_method: values.payment_method as PaymentMethod,
       status: values.status as TransactionStatus,
+      is_recurring: values.is_recurring,
+      recurrence_interval: values.is_recurring ? values.recurrence_interval : undefined,
+      recurrence_group_id: revenue?.recurrence_group_id,
     };
-    onSave(revenue);
-    form.reset();
+    onSave(rev, pendingFiles);
+    setPendingFiles([]);
     onOpenChange(false);
   }
 
@@ -64,7 +105,7 @@ export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("newRevenue")}</DialogTitle>
+          <DialogTitle>{isEditing ? t("editRevenue") : t("newRevenue")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -130,7 +171,7 @@ export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
               <FormField control={form.control} name="payment_method" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("paymentMethod")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="pix">{t("pix")}</SelectItem>
@@ -146,7 +187,7 @@ export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
               <FormField control={form.control} name="status" render={({ field }) => (
                 <FormItem>
                   <FormLabel>{t("status")}</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
                     <SelectContent>
                       <SelectItem value="paid">{t("paid")}</SelectItem>
@@ -157,6 +198,44 @@ export function RevenueForm({ open, onOpenChange, onSave }: RevenueFormProps) {
                   <FormMessage />
                 </FormItem>
               )} />
+            </div>
+
+            {/* Recurrence */}
+            <div className="space-y-3 rounded-md border p-3">
+              <FormField control={form.control} name="is_recurring" render={({ field }) => (
+                <FormItem className="flex items-center gap-2 space-y-0">
+                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                  <FormLabel className="cursor-pointer">{t("recurring")}</FormLabel>
+                </FormItem>
+              )} />
+              {isRecurring && (
+                <FormField control={form.control} name="recurrence_interval" render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t("recurrenceInterval")}</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || "monthly"}>
+                      <FormControl><SelectTrigger><SelectValue /></SelectTrigger></FormControl>
+                      <SelectContent>
+                        <SelectItem value="monthly">{t("monthly")}</SelectItem>
+                        <SelectItem value="weekly">{t("weekly")}</SelectItem>
+                        <SelectItem value="yearly">{t("yearly")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )} />
+              )}
+            </div>
+
+            {/* Attachments */}
+            <div className="border-t pt-4">
+              <FileAttachments
+                attachments={attachments}
+                recordId={isEditing ? (revenue!.id as string) : undefined}
+                recordType="revenue"
+                companyId={companyId}
+                onAttachmentsChange={onAttachmentsChange}
+                pendingFiles={pendingFiles}
+                onPendingFilesChange={setPendingFiles}
+              />
             </div>
 
             <div className="flex justify-end gap-3 pt-2">
