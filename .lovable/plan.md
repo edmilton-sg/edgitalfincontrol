@@ -1,149 +1,127 @@
 
-# Importacao de Fatura com IA (Gemini Flash) + CSV Local
+# Scroll na Revisao de Transacoes + Cadastro de Categorias Globais
 
 ## Resumo
 
-Criar funcionalidade para importar faturas de cartao via PDF (usando Lovable AI / Gemini Flash para extracao) ou CSV (parsing local no frontend). O usuario faz upload do arquivo, revisa as transacoes extraidas em tabela editavel, renomeia descricoes, seleciona categorias, e confirma a importacao. O arquivo original fica armazenado para consulta.
+Corrigir o problema de scroll na tela de revisao de transacoes importadas e criar um sistema centralizado de categorias de gastos que pode ser usado em todos os modulos (importacao de fatura, despesas, etc.).
 
 ---
 
-## 1. Edge Function -- `parse-invoice`
+## 1. Corrigir Scroll na Tela de Revisao
 
-### `supabase/functions/parse-invoice/index.ts`
+### Problema
+O `ScrollArea` no `InvoiceImportDialog.tsx` esta com `max-h-[400px]` mas pode nao estar funcionando corretamente com a tabela dentro do Dialog.
 
-- Recebe `{ content: string }` (texto extraido do PDF via pdfjs-dist no frontend)
-- Envia para Lovable AI Gateway (`https://ai.gateway.lovable.dev/v1/chat/completions`) com model `google/gemini-2.5-flash`
-- Usa **tool calling** para retornar dados estruturados
-- Tool definition: `extract_transactions` com schema de array contendo `date`, `description`, `amount`, `installment_info`
-- Prompt especifico para faturas de cartao de credito brasileiras
-- Trata erros 429 (rate limit) e 402 (creditos insuficientes)
-- Retorna `{ transactions: [...] }`
+### Solucao
+- Remover o `ScrollArea` wrapper e usar `overflow-y-auto` diretamente no container da tabela com altura calculada
+- Ajustar o `DialogContent` para usar `max-h-[90vh]` e garantir que o conteudo interno use `flex-1 overflow-y-auto`
+- A tabela ficara com scroll proprio dentro do dialog, permitindo ver todas as transacoes
 
-### `supabase/config.toml`
-
-Registrar a funcao:
-
-```text
-[functions.parse-invoice]
-verify_jwt = false
-```
+### Arquivo modificado
+- `src/components/cards/InvoiceImportDialog.tsx`
 
 ---
 
-## 2. Parser CSV no Frontend
+## 2. Criar Tabela de Categorias no Banco
 
-### Novo: `src/lib/parseInvoiceCSV.ts`
+### Nova tabela: `categories`
 
-- Detecta delimitador (`;` ou `,`)
-- Mapeia colunas por cabecalho com aliases flexiveis (data/date, descricao/description, valor/amount/value)
-- Normaliza datas (dd/MM/yyyy, yyyy-MM-dd)
-- Normaliza valores (virgula decimal, remove "R$")
-- Detecta parcelas no texto (ex: "PARCELA 3/10", "3 DE 10")
-- Retorna `ParsedTransaction[]`
+| Coluna | Tipo | Descricao |
+|---|---|---|
+| id | UUID (PK) | Identificador |
+| company_id | UUID (FK -> companies) | Empresa dona |
+| name | TEXT | Nome da categoria |
+| created_at | TIMESTAMPTZ | Data de criacao |
 
-Tipo:
-
-```text
-ParsedTransaction {
-  date: string        // YYYY-MM-DD
-  description: string
-  amount: number
-  installment_number?: number
-  installment_total?: number
-  category: string    // vazio por padrao
-  selected: boolean   // true por padrao
-}
-```
+- Constraint UNIQUE em `(company_id, name)` para evitar duplicatas
+- RLS habilitado: usuarios so veem/editam categorias da sua empresa
+- Seed com as categorias padrao existentes (rent, energy, internet, officeSupplies, marketing, transport, food, software) para cada empresa
 
 ---
 
-## 3. Componente de Importacao
+## 3. Tela de Gerenciamento de Categorias
 
-### Novo: `src/components/cards/InvoiceImportDialog.tsx`
+### Novo componente: `src/components/settings/CategoriesManager.tsx`
 
-Dialog com 2 etapas:
+- Lista todas as categorias da empresa em uma tabela simples
+- Botao para adicionar nova categoria (input inline ou modal pequeno)
+- Botao para editar nome de categoria existente
+- Botao para excluir categoria (com confirmacao)
+- Busca/filtro rapido
 
-**Etapa 1 -- Upload:**
-- Area de drag-and-drop ou botao para selecionar arquivo
-- Aceita `.pdf` e `.csv`, limite 20MB
-- Loading spinner durante processamento
-- Para PDF: usa `pdfjs-dist` para extrair texto no browser, envia texto para edge function `parse-invoice`
-- Para CSV: processa localmente via `parseInvoiceCSV`
+### Integracao na pagina de Configuracoes
 
-**Etapa 2 -- Revisao:**
-- Tabela editavel com colunas: Checkbox, Data, Descricao (Input), Categoria (Input), Valor, Parcela
-- Checkbox individual + "Selecionar Todos" / "Desselecionar Todos"
-- Resumo: X transacoes selecionadas, valor total
-- Botoes: "Cancelar" e "Importar Selecionados"
-
-Ao confirmar:
-- Insert batch em `card_transactions`
-- Salva arquivo original no bucket `attachments` com `record_type = 'card_invoice'`
-- Registra na tabela `attachments`
-- Invalida query de transacoes
+- Adicionar um card clicavel em `SettingsPage.tsx` que navega para `/settings/categories` ou abre o gerenciador inline
+- Alternativa: abrir como dialog dentro da propria pagina de Configuracoes
 
 ---
 
-## 4. Integracao
+## 4. Hook Compartilhado: `useCategories`
 
-### Modificado: `src/components/cards/CardTransactions.tsx`
+### Novo arquivo: `src/hooks/useCategories.ts`
 
-- Adicionar botao "Importar Fatura" (icone Upload) ao lado de "Nova Transacao"
-- Renderizar `InvoiceImportDialog`
-
-### Modificado: `src/components/shared/FileAttachments.tsx`
-
-- Adicionar `"card_invoice"` ao tipo `recordType`
+- Hook React Query que busca categorias da empresa atual via `supabase.from("categories").select("*").eq("company_id", companyId)`
+- Exporta tambem funcoes de mutacao: `addCategory`, `updateCategory`, `deleteCategory`
+- Reutilizavel em qualquer modulo
 
 ---
 
-## 5. Dependencia
+## 5. Usar Categorias no InvoiceImportDialog
 
-- Instalar `pdfjs-dist` para extracao de texto do PDF no browser (necessario mesmo com IA, pois o texto e extraido localmente antes de enviar)
+### Modificacao: `src/components/cards/InvoiceImportDialog.tsx`
+
+- Substituir o `Input` de categoria por um `Select` (combobox) populado com as categorias do banco
+- Permitir digitacao livre para criar categoria on-the-fly (ou selecionar existente)
+- Usar o hook `useCategories`
 
 ---
 
-## 6. Traducoes
+## 6. Usar Categorias no Modulo de Despesas
+
+### Modificacoes:
+- `src/components/expenses/ExpenseForm.tsx` -- substituir o `Select` com categorias hardcoded pelo `Select` com categorias do banco via `useCategories`
+- `src/components/expenses/ExpenseFilters.tsx` -- substituir o array `categories` hardcoded pelo hook `useCategories`
+- `src/data/mockData.ts` -- o tipo `ExpenseCategory` deixa de ser enum fixo e passa a aceitar string (compatibilidade com categorias dinamicas)
+
+---
+
+## 7. Traducoes
 
 Novas chaves em `src/i18n/translations.ts`:
 
 | Chave | pt-BR | en |
 |---|---|---|
-| importInvoice | Importar Fatura | Import Invoice |
-| selectFile | Selecionar Arquivo | Select File |
-| dragDropFile | Arraste aqui ou clique para selecionar | Drag here or click to select |
-| supportedFormats | Formatos: PDF, CSV | Formats: PDF, CSV |
-| processing | Processando... | Processing... |
-| extractedTransactions | Transacoes Extraidas | Extracted Transactions |
-| selectAll | Selecionar Todos | Select All |
-| deselectAll | Desselecionar Todos | Deselect All |
-| importSelected | Importar Selecionados | Import Selected |
-| transactionsImported | Transacoes importadas! | Transactions imported! |
-| noTransactionsFound | Nenhuma transacao encontrada | No transactions found |
-| parsingError | Erro ao processar arquivo | Error parsing file |
-| reviewTransactions | Revisar Transacoes | Review Transactions |
-| totalSelected | selecionadas | selected |
+| categories | Categorias | Categories |
+| manageCategories | Gerenciar Categorias | Manage Categories |
+| manageCategoriesDesc | Cadastre categorias de gasto para usar em todos os modulos | Register spending categories for all modules |
+| newCategory | Nova Categoria | New Category |
+| categoryName | Nome da Categoria | Category Name |
+| categoryExists | Categoria ja existe | Category already exists |
+| categoryDeleted | Categoria excluida | Category deleted |
+| categorySaved | Categoria salva | Category saved |
+| deleteCategory | Excluir Categoria | Delete Category |
+| deleteCategoryConfirm | Tem certeza que deseja excluir esta categoria? | Are you sure you want to delete this category? |
 
 ---
 
 ## Arquivos criados/modificados
 
-- **Novo:** `supabase/functions/parse-invoice/index.ts`
-- **Novo:** `src/lib/parseInvoiceCSV.ts`
-- **Novo:** `src/components/cards/InvoiceImportDialog.tsx`
-- **Modificado:** `supabase/config.toml`
-- **Modificado:** `src/components/cards/CardTransactions.tsx`
-- **Modificado:** `src/components/shared/FileAttachments.tsx`
-- **Modificado:** `src/i18n/translations.ts`
+- **Novo:** Migracao SQL para tabela `categories`
+- **Novo:** `src/hooks/useCategories.ts`
+- **Novo:** `src/components/settings/CategoriesManager.tsx`
+- **Modificado:** `src/components/cards/InvoiceImportDialog.tsx` (scroll + select de categorias)
+- **Modificado:** `src/components/expenses/ExpenseForm.tsx` (categorias dinamicas)
+- **Modificado:** `src/components/expenses/ExpenseFilters.tsx` (categorias dinamicas)
+- **Modificado:** `src/pages/SettingsPage.tsx` (link para gerenciar categorias)
+- **Modificado:** `src/i18n/translations.ts` (novas chaves)
+- **Modificado:** `src/data/mockData.ts` (tipo ExpenseCategory mais flexivel)
 
 ---
 
 ## Fluxo do usuario
 
-1. Na area de transacoes do cartao, clica em "Importar Fatura"
-2. Seleciona arquivo PDF ou CSV
-3. Sistema extrai transacoes (PDF via IA, CSV localmente)
-4. Tabela de revisao aparece com transacoes encontradas
-5. Usuario renomeia descricoes, digita categorias, desmarca itens
-6. Clica em "Importar Selecionados"
-7. Transacoes salvas e arquivo original armazenado
+1. Em Configuracoes, acessa "Gerenciar Categorias"
+2. Cadastra categorias como "Alimentacao", "Transporte", "Software", etc.
+3. Ao importar fatura, seleciona categorias do dropdown (ou digita nova)
+4. Ao criar/editar despesa, ve as mesmas categorias disponiveis
+5. Categorias sao compartilhadas entre todos os modulos da empresa
