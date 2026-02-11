@@ -30,7 +30,6 @@ export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTablePro
             <TableHead className="text-right">{t("amount")}</TableHead>
             <TableHead>{t("paymentMethod")}</TableHead>
             <TableHead>{t("installment")}</TableHead>
-            <TableHead className="text-center">{t("fixed")}</TableHead>
             <TableHead className="text-center">{t("personal")}</TableHead>
             <TableHead className="text-center">{t("actions")}</TableHead>
           </TableRow>
@@ -38,7 +37,7 @@ export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTablePro
         <TableBody>
           {data.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={10} className="text-center text-muted-foreground py-8">—</TableCell>
+              <TableCell colSpan={9} className="text-center text-muted-foreground py-8">—</TableCell>
             </TableRow>
           ) : (
             data.map((e) => (
@@ -55,9 +54,6 @@ export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTablePro
                 <TableCell className="text-right font-medium">{formatCurrency(e.amount, language)}</TableCell>
                 <TableCell>{t(e.payment_method as TranslationKey)}</TableCell>
                 <TableCell>{e.installment_total > 1 ? `${e.installment_number}/${e.installment_total}` : "—"}</TableCell>
-                <TableCell className="text-center">
-                  {e.is_fixed ? <Check className="h-4 w-4 text-primary mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />}
-                </TableCell>
                 <TableCell className="text-center">
                   {e.is_personal ? <Check className="h-4 w-4 text-accent-foreground mx-auto" /> : <X className="h-4 w-4 text-muted-foreground mx-auto" />}
                 </TableCell>
@@ -83,7 +79,7 @@ export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTablePro
             <TableRow>
               <TableCell colSpan={4} className="font-semibold">{t("totalAmount")}</TableCell>
               <TableCell className="text-right font-bold">{formatCurrency(total, language)}</TableCell>
-              <TableCell colSpan={5} />
+              <TableCell colSpan={4} />
             </TableRow>
           </TableFooter>
         )}

@@ -26,7 +26,6 @@ const schema = z.object({
   amount: z.coerce.number().positive(),
   payment_method: z.enum(["pix", "bankSlip", "creditCard", "transfer", "cash"]),
   installments: z.coerce.number().int().min(1).max(48),
-  is_fixed: z.boolean(),
   is_personal: z.boolean(),
   is_recurring: z.boolean(),
   recurrence_interval: z.string().optional(),
@@ -54,7 +53,7 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
     resolver: zodResolver(schema),
     defaultValues: {
       description: "", cost_center: "", amount: 0, payment_method: "pix",
-      category: categories[0]?.name || "", installments: 1, is_fixed: false, is_personal: false,
+      category: categories[0]?.name || "", installments: 1, is_personal: false,
       is_recurring: false, recurrence_interval: "monthly",
     },
   });
@@ -69,7 +68,6 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
         amount: expense.amount,
         payment_method: expense.payment_method as any,
         installments: expense.installments,
-        is_fixed: expense.is_fixed,
         is_personal: expense.is_personal,
         is_recurring: expense.is_recurring,
         recurrence_interval: expense.recurrence_interval || "monthly",
@@ -77,7 +75,7 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
     } else if (open) {
       form.reset({
         description: "", cost_center: "", amount: 0, payment_method: "pix",
-        category: categories[0]?.name || "", installments: 1, is_fixed: false, is_personal: false,
+        category: categories[0]?.name || "", installments: 1, is_personal: false,
         is_recurring: false, recurrence_interval: "monthly",
       });
       setPendingFiles([]);
@@ -98,7 +96,7 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
       installments: values.installments,
       installment_number: expense?.installment_number || 1,
       installment_total: values.installments,
-      is_fixed: values.is_fixed,
+      is_fixed: false,
       is_personal: values.is_personal,
       is_recurring: values.is_recurring,
       recurrence_interval: values.is_recurring ? values.recurrence_interval : undefined,
@@ -204,12 +202,6 @@ export function ExpenseForm({ open, onOpenChange, onSave, expense, attachments =
             )} />
 
             <div className="flex gap-8">
-              <FormField control={form.control} name="is_fixed" render={({ field }) => (
-                <FormItem className="flex items-center gap-2 space-y-0">
-                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                  <FormLabel className="cursor-pointer">{t("fixed")}</FormLabel>
-                </FormItem>
-              )} />
               <FormField control={form.control} name="is_personal" render={({ field }) => (
                 <FormItem className="flex items-center gap-2 space-y-0">
                   <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
