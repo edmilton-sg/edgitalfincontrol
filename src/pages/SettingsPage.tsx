@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Construction, UserPlus, ChevronRight } from "lucide-react";
+import { UserPlus, ChevronRight, Tag } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { CategoriesManager } from "@/components/settings/CategoriesManager";
 
 const SettingsPage = () => {
   const { t } = useLanguage();
@@ -32,10 +33,8 @@ const SettingsPage = () => {
       )}
 
       <Card>
-        <CardContent className="flex flex-col items-center justify-center py-20 text-center">
-          <Construction size={48} className="text-muted-foreground mb-4" />
-          <h2 className="text-xl font-semibold">{t("comingSoon")}</h2>
-          <p className="mt-2 max-w-md text-muted-foreground">{t("comingSoonDesc")}</p>
+        <CardContent className="pt-6">
+          <CategoriesManager />
         </CardContent>
       </Card>
     </div>
