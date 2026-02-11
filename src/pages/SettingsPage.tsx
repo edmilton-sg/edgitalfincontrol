@@ -4,6 +4,7 @@ import { UserPlus, ChevronRight, Tag } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { CategoriesManager } from "@/components/settings/CategoriesManager";
+import { RequestAccessInline } from "@/components/settings/RequestAccessInline";
 
 const SettingsPage = () => {
   const { t } = useLanguage();
@@ -15,20 +16,10 @@ const SettingsPage = () => {
       <h1 className="text-2xl font-bold">{t("settings")}</h1>
 
       {role === "accountant" && (
-        <Card
-          className="cursor-pointer transition-colors hover:bg-accent/50"
-          onClick={() => navigate("/request-access")}
-        >
-          <CardHeader className="flex-row items-center justify-between space-y-0 pb-2">
-            <div className="flex items-center gap-3">
-              <UserPlus size={20} className="text-primary" />
-              <div>
-                <CardTitle className="text-base">{t("manageCompanyAccess")}</CardTitle>
-                <CardDescription>{t("manageCompanyAccessDesc")}</CardDescription>
-              </div>
-            </div>
-            <ChevronRight size={20} className="text-muted-foreground" />
-          </CardHeader>
+        <Card>
+          <CardContent className="pt-6">
+            <RequestAccessInline />
+          </CardContent>
         </Card>
       )}
 

@@ -16,7 +16,7 @@ import SettingsPage from "./pages/SettingsPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import CompanySetupPage from "./pages/CompanySetupPage";
-import RequestAccessPage from "./pages/RequestAccessPage";
+
 import AccessRequestsPage from "./pages/AccessRequestsPage";
 import NotFound from "./pages/NotFound";
 
@@ -78,7 +78,7 @@ const App = () => (
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/company-setup" element={<CompanySetupPage />} />
-                <Route path="/request-access" element={<RequestAccessPage />} />
+                
                 <Route path="/*" element={<ProtectedRoutes />} />
               </Routes>
             </CompanyProvider>
