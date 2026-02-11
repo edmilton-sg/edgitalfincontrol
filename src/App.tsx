@@ -15,6 +15,8 @@ import PlaceholderPage from "./pages/PlaceholderPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import CompanySetupPage from "./pages/CompanySetupPage";
+import RequestAccessPage from "./pages/RequestAccessPage";
+import AccessRequestsPage from "./pages/AccessRequestsPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -40,6 +42,11 @@ function ProtectedRoutes() {
     return <Navigate to="/company-setup" replace />;
   }
 
+  // Accountants with no companies → request access
+  if (role === "accountant" && companies.length === 0) {
+    return <Navigate to="/request-access" replace />;
+  }
+
   return (
     <AppLayout>
       <Routes>
@@ -55,6 +62,7 @@ function ProtectedRoutes() {
         <Route path="/documents" element={<PlaceholderPage titleKey="documents" />} />
         <Route path="/reports" element={<PlaceholderPage titleKey="reports" />} />
         <Route path="/settings" element={<PlaceholderPage titleKey="settings" />} />
+        <Route path="/access-requests" element={<AccessRequestsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AppLayout>
@@ -74,6 +82,7 @@ const App = () => (
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/signup" element={<SignUpPage />} />
                 <Route path="/company-setup" element={<CompanySetupPage />} />
+                <Route path="/request-access" element={<RequestAccessPage />} />
                 <Route path="/*" element={<ProtectedRoutes />} />
               </Routes>
             </CompanyProvider>
