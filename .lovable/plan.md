@@ -1,175 +1,82 @@
 
+# Corrigir atribuicao de role no cadastro e manter confirmacao de email
 
-# Solicitacao de Acesso do Contador a Empresas
+## Problema
 
-## Resumo
+Quando o usuario se cadastra com confirmacao de email ativada, ele nao tem sessao ativa apos o `signUp`. O INSERT manual na tabela `user_roles` (linha 43 do `SignUpPage.tsx`) falha silenciosamente por causa das politicas RLS que exigem `auth.uid()` -- que e `null` nesse momento.
 
-O contador podera solicitar vinculacao a uma empresa informando o CNPJ. O dono da empresa recebera a solicitacao e podera aprovar ou rejeitar. Apos aprovacao, o contador e adicionado como membro da empresa e pode visualizar/editar todos os dados.
+## Solucao (padrao correto)
 
-## Fluxo do usuario
+1. **Passar a role nos metadados do usuario** durante o cadastro (`raw_user_meta_data`)
+2. **Criar um trigger no banco** que atribui a role automaticamente quando o usuario e criado, usando `SECURITY DEFINER` (sem depender de RLS)
+3. **Remover o INSERT manual** do `SignUpPage.tsx`
+4. **Corrigir o usuario existente** `edmilton.sg.junior@outlook.com` atribuindo role `accountant`
 
-```text
-CONTADOR                              DONO DA EMPRESA
-   |                                       |
-   |-- Digita CNPJ no formulario           |
-   |-- Clica "Solicitar Acesso"            |
-   |                                       |
-   |   [solicitacao pendente criada]        |
-   |                                       |
-   |                          Icone de notificacao (badge)
-   |                          Abre pagina de solicitacoes
-   |                          Ve: "Contador X quer acessar"
-   |                          Clica "Aprovar" ou "Rejeitar"
-   |                                       |
-   |   [se aprovado: contador vira          |
-   |    membro da empresa]                  |
-   |                                       |
-   |-- Empresa aparece no seletor           |
-   |-- Acesso total aos dados               |
-```
-
-## O que sera construido
-
-### 1. Tabela `access_requests` (nova)
-
-Armazena solicitacoes de acesso pendentes, aprovadas e rejeitadas.
-
-| Coluna | Tipo | Descricao |
-|--------|------|-----------|
-| id | uuid | PK |
-| requester_id | uuid | Usuario que solicita (contador) |
-| company_id | uuid | Empresa alvo |
-| status | text | pending, approved, rejected |
-| created_at | timestamp | Data da solicitacao |
-| resolved_at | timestamp | Data da aprovacao/rejeicao |
-| resolved_by | uuid | Quem aprovou/rejeitou |
-
-RLS:
-- SELECT: o solicitante pode ver suas proprias solicitacoes; o dono da empresa pode ver solicitacoes para suas empresas
-- INSERT: usuarios autenticados com role "accountant" podem criar solicitacoes
-- UPDATE: somente o dono da empresa pode aprovar/rejeitar
-
-### 2. Pagina do Contador: Solicitar Acesso
-
-Nova pagina `/request-access` acessivel pelo contador (quando nao tem empresas vinculadas ou via sidebar).
-
-- Campo CNPJ com mascara (mesmo componente existente)
-- Ao digitar 14 digitos: busca a empresa no banco pelo CNPJ
-- Se encontrada: exibe nome da empresa e botao "Solicitar Acesso"
-- Se nao encontrada: mensagem informativa
-- Lista de solicitacoes pendentes do contador
-
-### 3. Pagina do Dono: Solicitacoes de Acesso
-
-Nova pagina `/access-requests` acessivel pelo dono da empresa.
-
-- Lista de solicitacoes pendentes para suas empresas
-- Cada item mostra: nome do contador, data da solicitacao
-- Botoes "Aprovar" e "Rejeitar"
-- Ao aprovar: insere registro em `company_members` com role "accountant"
-
-### 4. Notificacao no Header
-
-- Badge no icone de sino mostrando quantidade de solicitacoes pendentes (para donos de empresa)
-
-### 5. Redirecionamento do Contador
-
-- Contador sem empresas vinculadas: redirecionar para `/request-access` ao inves de `/company-setup`
-
----
-
-## Secao Tecnica
+## Alteracoes
 
 ### 1. Migration SQL
 
+- Inserir role `accountant` para o usuario `e418818c-dab4-44f7-b454-aad5f44bee96`
+- Criar funcao `handle_new_user_role()` com `SECURITY DEFINER` que le `raw_user_meta_data->>'role'` e insere na `user_roles`
+- Criar trigger `on_auth_user_created_role` em `auth.users` AFTER INSERT
+
+### 2. `src/pages/SignUpPage.tsx`
+
+- Adicionar `role` nos metadados: `data: { full_name: fullName, role }`
+- Remover o bloco `if (data.user) { await supabase.from("user_roles").insert(...) }` (linhas 41-44), pois o trigger cuidara disso automaticamente
+
+## Secao Tecnica
+
+### Migration SQL
+
 ```sql
-CREATE TABLE public.access_requests (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  requester_id uuid NOT NULL,
-  company_id uuid NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
-  status text NOT NULL DEFAULT 'pending',
-  created_at timestamptz NOT NULL DEFAULT now(),
-  resolved_at timestamptz,
-  resolved_by uuid
-);
+-- 1. Corrigir usuario existente
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('e418818c-dab4-44f7-b454-aad5f44bee96', 'accountant')
+ON CONFLICT (user_id, role) DO NOTHING;
 
-ALTER TABLE public.access_requests ENABLE ROW LEVEL SECURITY;
+-- 2. Funcao para atribuir role automaticamente
+CREATE OR REPLACE FUNCTION public.handle_new_user_role()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  IF NEW.raw_user_meta_data->>'role' IS NOT NULL THEN
+    INSERT INTO public.user_roles (user_id, role)
+    VALUES (NEW.id, (NEW.raw_user_meta_data->>'role')::app_role)
+    ON CONFLICT (user_id, role) DO NOTHING;
+  END IF;
+  RETURN NEW;
+END;
+$$;
 
--- Contadores podem ver suas proprias solicitacoes
-CREATE POLICY "Requesters can view own requests"
-  ON public.access_requests FOR SELECT TO authenticated
-  USING (requester_id = auth.uid());
-
--- Donos podem ver solicitacoes para suas empresas
-CREATE POLICY "Owners can view requests for their companies"
-  ON public.access_requests FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.companies
-      WHERE companies.id = access_requests.company_id
-      AND companies.owner_id = auth.uid()
-    )
-  );
-
--- Contadores podem criar solicitacoes
-CREATE POLICY "Accountants can create requests"
-  ON public.access_requests FOR INSERT TO authenticated
-  WITH CHECK (
-    requester_id = auth.uid()
-    AND has_role(auth.uid(), 'accountant'::app_role)
-  );
-
--- Donos podem atualizar (aprovar/rejeitar)
-CREATE POLICY "Owners can resolve requests"
-  ON public.access_requests FOR UPDATE TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.companies
-      WHERE companies.id = access_requests.company_id
-      AND companies.owner_id = auth.uid()
-    )
-  );
+-- 3. Trigger na criacao do usuario
+CREATE TRIGGER on_auth_user_created_role
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user_role();
 ```
 
-### 2. Novos arquivos
+### `src/pages/SignUpPage.tsx`
 
-- `src/pages/RequestAccessPage.tsx` - Formulario do contador para solicitar acesso via CNPJ
-- `src/pages/AccessRequestsPage.tsx` - Pagina do dono para gerenciar solicitacoes
+Antes:
+```tsx
+options: {
+  data: { full_name: fullName },
+  emailRedirectTo: window.location.origin,
+},
+// ...
+if (data.user) {
+  await supabase.from("user_roles").insert({ user_id: data.user.id, role });
+}
+```
 
-### 3. Arquivos modificados
-
-- `src/App.tsx` - Novas rotas `/request-access` e `/access-requests`; redirecionar contador sem empresas para `/request-access`
-- `src/components/layout/AppSidebar.tsx` - Adicionar item "Solicitacoes" no menu (condicional por role)
-- `src/components/layout/AppHeader.tsx` - Badge de notificacao com contagem real de solicitacoes pendentes
-- `src/i18n/translations.ts` - Novas chaves de traducao
-
-### 4. Traducoes novas
-
-pt-BR:
-- `requestAccess`: "Solicitar Acesso"
-- `requestAccessDesc`: "Informe o CNPJ da empresa para solicitar vinculacao"
-- `accessRequests`: "Solicitacoes de Acesso"
-- `pendingRequests`: "Solicitacoes Pendentes"
-- `approve`: "Aprovar"
-- `reject`: "Rejeitar"
-- `requestSent`: "Solicitacao enviada!"
-- `requestApproved`: "Solicitacao aprovada!"
-- `requestRejected`: "Solicitacao rejeitada"
-- `companyNotFound`: "Empresa nao encontrada com este CNPJ"
-- `alreadyRequested`: "Voce ja solicitou acesso a esta empresa"
-- `accountantName`: "Contador"
-
-en:
-- `requestAccess`: "Request Access"
-- `requestAccessDesc`: "Enter the company tax ID to request access"
-- `accessRequests`: "Access Requests"
-- `pendingRequests`: "Pending Requests"
-- `approve`: "Approve"
-- `reject`: "Reject"
-- `requestSent`: "Request sent!"
-- `requestApproved`: "Request approved!"
-- `requestRejected`: "Request rejected"
-- `companyNotFound`: "No company found with this tax ID"
-- `alreadyRequested`: "You already requested access to this company"
-- `accountantName`: "Accountant"
-
+Depois:
+```tsx
+options: {
+  data: { full_name: fullName, role },
+  emailRedirectTo: window.location.origin,
+},
+// (sem INSERT manual -- o trigger cuida disso)
+```
