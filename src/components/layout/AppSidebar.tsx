@@ -57,15 +57,16 @@ export function AppSidebar({ collapsed, onToggle, mobileOpen, isMobile, onNavCli
       )}
     >
       {/* Logo */}
-      <div className="flex h-16 items-center justify-between px-4 border-b border-sidebar-border">
-        {!collapsed ? (
-          <img src={logo} alt="FinControl" className="h-8 object-contain" />
-        ) : (
-          <img src={logo} alt="FinControl" className="h-7 w-7 object-cover object-left" />
+      <div className={cn(
+        "flex h-16 items-center border-b border-sidebar-border",
+        collapsed ? "justify-center px-2 gap-0" : "justify-between px-4"
+      )}>
+        {!collapsed && (
+          <img src={logo} alt="FinControl" className="h-9 max-w-[140px] object-contain" />
         )}
         <button
           onClick={onToggle}
-          className="rounded-md p-1.5 hover:bg-sidebar-accent transition-colors"
+          className="rounded-md p-1.5 hover:bg-sidebar-accent transition-colors shrink-0"
         >
           {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
         </button>
