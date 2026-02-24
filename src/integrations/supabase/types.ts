@@ -500,6 +500,91 @@ export type Database = {
           },
         ]
       }
+      tax_payments: {
+        Row: {
+          company_id: string
+          created_at: string
+          due_date: string
+          estimated_amount: number
+          id: string
+          paid_amount: number | null
+          paid_date: string | null
+          reference_month: string
+          status: string
+          tax_type: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          due_date: string
+          estimated_amount?: number
+          id?: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          reference_month: string
+          status?: string
+          tax_type?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          due_date?: string
+          estimated_amount?: number
+          id?: string
+          paid_amount?: number | null
+          paid_date?: string | null
+          reference_month?: string
+          status?: string
+          tax_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_payments_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tax_settings: {
+        Row: {
+          company_id: string
+          created_at: string
+          fixed_amount: number
+          id: string
+          tax_mode: string
+          tax_percentage: number
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          fixed_amount?: number
+          id?: string
+          tax_mode?: string
+          tax_percentage?: number
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          fixed_amount?: number
+          id?: string
+          tax_mode?: string
+          tax_percentage?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tax_settings_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: true
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
