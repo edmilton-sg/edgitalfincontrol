@@ -55,5 +55,20 @@ export interface Attachment {
   created_at: string;
 }
 
+export interface CompanyDocument {
+  id: string;
+  company_id: string;
+  title: string;
+  description: string | null;
+  file_name: string;
+  file_path: string;
+  file_size: number;
+  content_type: string;
+  expires_at: string | null;
+  alert_days_before: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export const revenuesData: Revenue[] = [];
 export const expensesData: Expense[] = [];

@@ -4,6 +4,7 @@ import { BalanceChart } from "@/components/dashboard/BalanceChart";
 import { CashFlowCard } from "@/components/dashboard/CashFlowCard";
 import { TaxCard } from "@/components/dashboard/TaxCard";
 import { RecentTransactions } from "@/components/dashboard/RecentTransactions";
+import { DocumentAlerts } from "@/components/dashboard/DocumentAlerts";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const Index = () => {
@@ -14,6 +15,8 @@ const Index = () => {
       <h1 className="text-2xl font-bold">{t("dashboard")}</h1>
 
       <SummaryCards />
+
+      <DocumentAlerts />
 
       <div className="grid gap-6 lg:grid-cols-2">
         <RevenueExpenseChart />
