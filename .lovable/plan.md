@@ -1,36 +1,30 @@
 
 
-# Visualizacao de Documentos (Imagem e PDF)
+# Corrigir Preview de PDF - Abordagem Simples com Blob URL
 
-## Problema Atual
+## Problema
 
-O `DocumentDetailDialog` tenta exibir imagens usando uma URL direta com path "authenticated", que nao funciona sem headers de autorizacao. Alem disso, nao ha nenhum suporte para visualizacao de PDFs - apenas o botao de download.
+O `pdfjs-dist` esta falhando porque o worker nao consegue ser carregado da CDN no ambiente do projeto. O erro e: `"Failed to fetch dynamically imported module"`.
 
 ## Solucao
 
-Atualizar o `DocumentDetailDialog` para:
-
-1. **Gerar uma URL assinada (signed URL)** via Supabase Storage para acessar o arquivo de forma segura
-2. **Exibir imagens** usando a signed URL em uma tag `<img>`
-3. **Exibir PDFs** usando a signed URL em um `<iframe>` com fallback para download
-4. **Ampliar o dialog** para `max-w-3xl` quando houver preview, para melhor visualizacao
+Remover completamente o `pdfjs-dist` e usar uma abordagem muito mais simples: baixar o PDF como blob via fetch, criar uma Object URL local e exibir num `<embed>` ou `<object>` tag. Isso funciona nativamente em todos os navegadores modernos sem dependencias externas.
 
 ## Arquivo a Modificar
 
 ### `src/components/documents/DocumentDetailDialog.tsx`
 
-- Adicionar `useState` e `useEffect` para gerar signed URL ao abrir o dialog
-- Usar `supabase.storage.from("attachments").createSignedUrl(doc.file_path, 3600)` para obter URL temporaria (1h)
-- Para imagens: renderizar `<img src={signedUrl} />` com loading state
-- Para PDFs: renderizar `<iframe src={signedUrl} />` com altura fixa e borda arredondada
-- Para outros tipos de arquivo: manter apenas o botao de download
-- Aumentar o tamanho do dialog para acomodar o preview
+1. Remover imports de `pdfjs-dist` e a configuracao do worker
+2. Remover o componente `PdfViewer` inteiro
+3. Para PDFs: usar `<embed src={signedUrl} type="application/pdf" />` diretamente com a signed URL
+4. Manter o fallback de download caso o navegador nao suporte embed
+
+A tag `<embed>` com `type="application/pdf"` usa o visualizador de PDF nativo do navegador (Chrome, Edge, Firefox todos possuem um). Diferente do `<iframe>`, o `<embed>` nao e bloqueado por politicas de seguranca do Edge.
 
 ## Detalhes Tecnicos
 
-- **Signed URLs** expiram em 1 hora, suficiente para visualizacao
-- O `useEffect` regenera a URL toda vez que o dialog abre com um documento diferente
-- Estado de loading exibe um spinner enquanto a URL e gerada
-- Tipos suportados para preview: `image/*` e `application/pdf`
-- Nenhuma alteracao de banco de dados necessaria
+- `<embed>` e suportado por todos os navegadores modernos para PDFs
+- Nao precisa de nenhuma biblioteca externa
+- A signed URL ja funciona (confirmado nos logs de rede - status 200)
+- Remover `pdfjs-dist` simplifica o codigo e elimina problemas de worker
 
