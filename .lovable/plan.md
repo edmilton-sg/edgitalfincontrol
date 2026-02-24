@@ -1,77 +1,75 @@
 
-# Implementar Modulo DRE (Demonstracao do Resultado do Exercicio)
+# Corrigir Dashboard para Exibir Dados Reais + Inserir Dados de Teste
 
-## Resumo
+## Problema
 
-O DRE e um relatorio financeiro que mostra as receitas, despesas e o resultado (lucro ou prejuizo) de um periodo. Ele sera construido a partir dos dados ja existentes nas tabelas `revenues` e `expenses`, sem necessidade de novas tabelas no banco.
+Todos os componentes do dashboard (SummaryCards, RevenueExpenseChart, BalanceChart, CashFlowCard, TaxCard, RecentTransactions) utilizam dados estaticos do arquivo `mockData.ts`, que estao todos zerados ou vazios. Nenhum componente busca dados do banco de dados.
 
-## Estrutura do DRE
+## Solucao
 
-```text
-(+) Receita Bruta
-(-) Deducoes (taxas/fees)
-(=) Receita Liquida
-(-) Despesas Operacionais (agrupadas por categoria)
-(=) Resultado Operacional (EBITDA)
-(-) Despesas Pessoais
-(=) Resultado Liquido
-```
+### Parte 1: Inserir dados de teste no banco
 
-## Funcionalidades
+Inserir registros nas tabelas `revenues` e `expenses` para a empresa `c279ffa7-6028-4b8a-971f-fa67d4126c98` (EDGITAL THINKING SERVICE), cobrindo os ultimos 6 meses com dados variados:
 
-- Filtro por periodo (mes/ano) com seletor de mes
-- Visualizacao em formato de tabela hierarquica com linhas de totais
-- Grafico de barras comparando meses (ultimos 6 ou 12 meses)
-- Indicadores de variacao percentual vs mes anterior
-- Exportar/imprimir (botao futuro, placeholder)
+- **Revenues**: ~3-5 registros por mes (set/2025 a fev/2026), com valores entre R$2.000 e R$30.000, diferentes metodos de pagamento e status
+- **Expenses**: ~3-5 registros por mes, com categorias variadas (Aluguel, Marketing, Software, Salarios, etc.), valores entre R$500 e R$8.000, mix de operacionais e pessoais
 
-## Arquivos a criar/modificar
+### Parte 2: Reescrever componentes do dashboard
 
-### 1. Nova pagina `src/pages/DrePage.tsx`
-- Componente principal com filtro de periodo (mes/ano)
-- Busca dados de `revenues` e `expenses` do periodo selecionado via useQuery
-- Calcula as linhas do DRE a partir dos dados brutos
-- Renderiza o componente DreTable e DreChart
+Todos os componentes serao alterados para buscar dados reais via `useQuery` + Supabase, usando o `selectedCompanyId` do `CompanyContext`.
 
-### 2. Novo componente `src/components/dre/DreTable.tsx`
-- Tabela hierarquica com as linhas do DRE
-- Linhas de grupo (Receita Bruta, Deducoes, Despesas por categoria, etc.)
-- Linhas de resultado com destaque visual (negrito, cor verde/vermelha)
-- Coluna de valor e coluna de percentual sobre receita bruta (analise vertical)
+#### 2.1 `SummaryCards.tsx`
+- Buscar revenues e expenses do mes atual e do mes anterior
+- Calcular: Receita Bruta mensal, Despesa mensal, Saldo (receita - despesa), Lucro Operacional
+- Calcular variacao percentual vs mes anterior
 
-### 3. Novo componente `src/components/dre/DreChart.tsx`
-- Grafico de barras com Recharts mostrando Receita Liquida vs Despesas vs Resultado nos ultimos meses
-- Reutiliza padroes do RevenueExpenseChart existente
+#### 2.2 `RevenueExpenseChart.tsx`
+- Buscar revenues e expenses dos ultimos 6 meses
+- Agrupar por mes e calcular totais de receita liquida e despesas
+- Renderizar o grafico de barras com dados reais
 
-### 4. Novo componente `src/components/dre/DrePeriodFilter.tsx`
-- Seletor de mes/ano para navegar entre periodos
-- Botoes de anterior/proximo mes
+#### 2.3 `BalanceChart.tsx`
+- Buscar revenues e expenses dos ultimos 6 meses
+- Calcular saldo acumulado mes a mes (receita liquida - despesas)
+- Renderizar o grafico de area com dados reais
 
-### 5. Modificar `src/App.tsx`
-- Substituir o PlaceholderPage da rota `/dre` pelo novo DrePage
+#### 2.4 `CashFlowCard.tsx`
+- Buscar revenues do mes atual
+- Calcular "Realizado" (status = paid) vs "Projetado" (total do mes)
+- Mostrar percentual de realizacao
 
-### 6. Modificar `src/i18n/translations.ts`
-- Adicionar traducoes para os labels do DRE:
-  - grossRevenue, deductions, netRevenue, operatingExpenses, operatingResult, personalExpenses, netResult, percentOfRevenue, period, previousMonth, nextMonth, incomeStatement, noDataForPeriod
+#### 2.5 `TaxCard.tsx`
+- Calcular uma estimativa de DAS baseada na receita bruta do mes (aliquota simplificada de 6%)
+- Exibir vencimento no dia 20 do mes seguinte
+
+#### 2.6 `RecentTransactions.tsx`
+- Buscar as 10 transacoes mais recentes (revenues + expenses combinadas)
+- Exibir com valores positivos (receitas) e negativos (despesas)
+
+### Parte 3: Limpar mockData.ts
+- Remover as constantes de dashboard (summaryData, monthlyData, etc.) que nao serao mais utilizadas
+- Manter apenas os tipos (Revenue, Expense, etc.)
+
+## Arquivos modificados
+
+- `src/components/dashboard/SummaryCards.tsx` - buscar dados reais
+- `src/components/dashboard/RevenueExpenseChart.tsx` - buscar dados reais
+- `src/components/dashboard/BalanceChart.tsx` - buscar dados reais
+- `src/components/dashboard/CashFlowCard.tsx` - buscar dados reais
+- `src/components/dashboard/TaxCard.tsx` - buscar dados reais
+- `src/components/dashboard/RecentTransactions.tsx` - buscar dados reais
+- `src/data/mockData.ts` - remover constantes de dashboard nao usadas
 
 ## Detalhes tecnicos
 
-### Calculo do DRE (dentro do DrePage)
-- **Receita Bruta**: soma de `gross_amount` de todas as revenues do periodo
-- **Deducoes**: soma de `fee_amount` de todas as revenues
-- **Receita Liquida**: soma de `net_amount` (ou Bruta - Deducoes)
-- **Despesas Operacionais**: soma de `amount` de expenses onde `is_personal = false`, agrupadas por categoria
-- **Despesas Pessoais**: soma de `amount` de expenses onde `is_personal = true`
-- **Resultado Operacional**: Receita Liquida - Despesas Operacionais
-- **Resultado Liquido**: Resultado Operacional - Despesas Pessoais
+Cada componente seguira o padrao:
+```text
+1. import useCompany, useQuery, supabase
+2. Obter selectedCompanyId do CompanyContext
+3. useQuery com queryKey incluindo companyId e periodo
+4. Buscar revenues/expenses com filtros de data e company_id
+5. Calcular metricas a partir dos dados retornados
+6. Renderizar com loading state (Skeleton) quando carregando
+```
 
-### Queries
-- Revenues: `supabase.from("revenues").select("*").eq("company_id", id).gte("date", startOfMonth).lte("date", endOfMonth)`
-- Expenses: `supabase.from("expenses").select("*").eq("company_id", id).gte("date", startOfMonth).lte("date", endOfMonth)`
-- Para o grafico mensal: buscar os ultimos 6 meses de dados
-
-### Componentes UI reutilizados
-- Card, Table (shadcn/ui)
-- Recharts (BarChart) - mesmo padrao do dashboard
-- Select para periodo
-- formatCurrency do `src/lib/formatCurrency.ts`
+Os dados de teste serao inseridos via ferramenta de insert SQL diretamente nas tabelas revenues e expenses.
