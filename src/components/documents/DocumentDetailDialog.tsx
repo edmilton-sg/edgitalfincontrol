@@ -1,6 +1,5 @@
-import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import { useState, useEffect, useRef } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Download, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -18,27 +17,61 @@ interface DocumentDetailDialogProps {
 
 export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDownload }: DocumentDetailDialogProps) {
   const { t } = useLanguage();
-  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [previewError, setPreviewError] = useState(false);
+  const prevUrlRef = useRef<string | null>(null);
 
   useEffect(() => {
+    // Cleanup previous blob URL
+    if (prevUrlRef.current) {
+      URL.revokeObjectURL(prevUrlRef.current);
+      prevUrlRef.current = null;
+    }
+
     if (!open || !doc) {
-      setSignedUrl(null);
+      setPreviewUrl(null);
+      setPreviewError(false);
       return;
     }
 
     const isPreviewable = doc.content_type.startsWith("image/") || doc.content_type === "application/pdf";
     if (!isPreviewable) return;
 
+    let cancelled = false;
     setLoading(true);
+    setPreviewError(false);
+
     supabase.storage
       .from("attachments")
-      .createSignedUrl(doc.file_path, 3600)
+      .download(doc.file_path)
       .then(({ data, error }) => {
-        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
-      })
-      .finally(() => setLoading(false));
+        if (cancelled) return;
+        if (error || !data) {
+          setPreviewError(true);
+          setLoading(false);
+          return;
+        }
+        const objectUrl = URL.createObjectURL(data);
+        prevUrlRef.current = objectUrl;
+        setPreviewUrl(objectUrl);
+        setLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [open, doc?.id]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (prevUrlRef.current) {
+        URL.revokeObjectURL(prevUrlRef.current);
+        prevUrlRef.current = null;
+      }
+    };
+  }, []);
 
   if (!doc) return null;
 
@@ -59,10 +92,12 @@ export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDown
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className={hasPreview ? "max-w-3xl" : "max-w-lg"}>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {doc.title}
-            <Badge className={cfg.className}>{cfg.label}</Badge>
-          </DialogTitle>
+          <DialogTitle>{doc.title}</DialogTitle>
+          <DialogDescription className="flex items-center gap-2">
+            <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${cfg.className}`}>
+              {cfg.label}
+            </span>
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-3">
@@ -87,12 +122,18 @@ export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDown
             </div>
           )}
 
-          {!loading && signedUrl && isImage && (
-            <img src={signedUrl} alt={doc.title} className="rounded-md max-h-[500px] object-contain w-full" />
+          {!loading && previewError && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Não foi possível carregar o preview. Use o botão abaixo para baixar o arquivo.
+            </p>
           )}
 
-          {!loading && signedUrl && isPdf && (
-            <embed src={signedUrl} type="application/pdf" className="w-full h-[600px] rounded-md" />
+          {!loading && previewUrl && isImage && (
+            <img src={previewUrl} alt={doc.title} className="rounded-md max-h-[500px] object-contain w-full" />
+          )}
+
+          {!loading && previewUrl && isPdf && (
+            <embed src={previewUrl} type="application/pdf" className="w-full h-[600px] rounded-md" />
           )}
 
           <Button variant="outline" className="w-full" onClick={() => onDownload(doc)}>
