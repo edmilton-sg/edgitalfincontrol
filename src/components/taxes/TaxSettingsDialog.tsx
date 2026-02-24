@@ -12,7 +12,7 @@ import { toast } from "sonner";
 interface TaxSettingsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  currentSettings: { tax_mode: string; tax_percentage: number; fixed_amount: number } | null;
+  currentSettings: { tax_mode: string; tax_percentage: number; fixed_amount: number; due_day?: number } | null;
   onSaved: () => void;
 }
 
@@ -22,6 +22,7 @@ export function TaxSettingsDialog({ open, onOpenChange, currentSettings, onSaved
   const [mode, setMode] = useState<string>("percentage");
   const [percentage, setPercentage] = useState("6");
   const [fixedAmount, setFixedAmount] = useState("0");
+  const [dueDay, setDueDay] = useState("20");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -29,10 +30,12 @@ export function TaxSettingsDialog({ open, onOpenChange, currentSettings, onSaved
       setMode(currentSettings.tax_mode);
       setPercentage(String(currentSettings.tax_percentage));
       setFixedAmount(String(currentSettings.fixed_amount));
+      setDueDay(String(currentSettings.due_day ?? 20));
     } else {
       setMode("percentage");
       setPercentage("6");
       setFixedAmount("0");
+      setDueDay("20");
     }
   }, [currentSettings, open]);
 
@@ -40,11 +43,14 @@ export function TaxSettingsDialog({ open, onOpenChange, currentSettings, onSaved
     if (!selectedCompanyId) return;
     setSaving(true);
 
+    const dueDayNum = Math.min(28, Math.max(1, parseInt(dueDay) || 20));
+
     const payload = {
       company_id: selectedCompanyId,
       tax_mode: mode,
       tax_percentage: parseFloat(percentage) || 6,
       fixed_amount: parseFloat(fixedAmount) || 0,
+      due_day: dueDayNum,
     };
 
     const { error } = currentSettings
@@ -106,6 +112,19 @@ export function TaxSettingsDialog({ open, onOpenChange, currentSettings, onSaved
               <p className="text-xs text-muted-foreground">{t("meiFixedValue")}</p>
             </div>
           )}
+
+          <div className="space-y-2">
+            <Label>{t("dueDayLabel")}</Label>
+            <Input
+              type="number"
+              min="1"
+              max="28"
+              value={dueDay}
+              onChange={(e) => setDueDay(e.target.value)}
+              placeholder="20"
+            />
+            <p className="text-xs text-muted-foreground">{t("dueDayHint")}</p>
+          </div>
 
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>{t("cancel")}</Button>

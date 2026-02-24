@@ -1,0 +1,1 @@
+ALTER TABLE public.tax_settings ADD COLUMN due_day integer NOT NULL DEFAULT 20;

@@ -33,13 +33,14 @@ export default function TaxesPage() {
         .select("*")
         .eq("company_id", selectedCompanyId!)
         .maybeSingle();
-      return data as unknown as { tax_mode: string; tax_percentage: number; fixed_amount: number } | null;
+      return data as unknown as { tax_mode: string; tax_percentage: number; fixed_amount: number; due_day?: number } | null;
     },
   });
 
   const taxMode = taxSettings?.tax_mode ?? "percentage";
   const taxPercentage = taxSettings?.tax_percentage ?? 6;
   const fixedAmount = taxSettings?.fixed_amount ?? 0;
+  const dueDay = taxSettings?.due_day ?? 20;
 
   // Fetch monthly revenues for the year
   const { data: monthlyRevenues, isLoading: loadingRevenues } = useQuery({
@@ -101,7 +102,7 @@ export default function TaxesPage() {
       const estimated = taxMode === "fixed" ? fixedAmount : grossRevenue * (taxPercentage / 100);
 
       const nextMonth = addMonths(monthDate, 1);
-      const dueDate = format(new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 20), "yyyy-MM-dd");
+      const dueDate = format(new Date(nextMonth.getFullYear(), nextMonth.getMonth(), dueDay), "yyyy-MM-dd");
 
       const payment = payments?.find((p) => p.reference_month === refMonth);
 
@@ -125,7 +126,7 @@ export default function TaxesPage() {
       });
     }
     return rows;
-  }, [monthlyRevenues, payments, taxMode, taxPercentage, fixedAmount, year]);
+  }, [monthlyRevenues, payments, taxMode, taxPercentage, fixedAmount, dueDay, year]);
 
   const currentMonthDas = guideRows.find(
     (r) => r.referenceMonth === format(startOfMonth(now), "yyyy-MM-dd")
