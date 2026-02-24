@@ -6,6 +6,7 @@ import { useCompany } from "@/contexts/CompanyContext";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, addMonths, format } from "date-fns";
+import { formatCurrency } from "@/lib/formatCurrency";
 
 export function TaxCard() {
   const { t, language } = useLanguage();
@@ -15,30 +16,49 @@ export function TaxCard() {
   const curStart = format(startOfMonth(now), "yyyy-MM-dd");
   const curEnd = format(endOfMonth(now), "yyyy-MM-dd");
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["dashboard-tax", selectedCompanyId, curStart],
+  // Fetch tax settings
+  const { data: taxSettings } = useQuery({
+    queryKey: ["dashboard-tax-settings", selectedCompanyId],
     enabled: !!selectedCompanyId,
     queryFn: async () => {
-      const { data: revs } = await supabase
-        .from("revenues")
-        .select("gross_amount")
+      const { data } = await supabase
+        .from("tax_settings" as any)
+        .select("*")
         .eq("company_id", selectedCompanyId!)
-        .gte("date", curStart)
-        .lte("date", curEnd);
+        .maybeSingle();
+      return data as unknown as { tax_mode: string; tax_percentage: number; fixed_amount: number } | null;
+    },
+  });
 
-      const gross = (revs ?? []).reduce((s, r) => s + Number(r.gross_amount), 0);
-      const dasEstimate = gross * 0.06; // Simples Nacional ~6%
+  const { data, isLoading } = useQuery({
+    queryKey: ["dashboard-tax", selectedCompanyId, curStart, taxSettings?.tax_mode],
+    enabled: !!selectedCompanyId,
+    queryFn: async () => {
+      const mode = taxSettings?.tax_mode ?? "percentage";
+      const pct = taxSettings?.tax_percentage ?? 6;
+      const fixed = taxSettings?.fixed_amount ?? 0;
+
+      let dasEstimate: number;
+      if (mode === "fixed") {
+        dasEstimate = fixed;
+      } else {
+        const { data: revs } = await supabase
+          .from("revenues")
+          .select("gross_amount")
+          .eq("company_id", selectedCompanyId!)
+          .gte("date", curStart)
+          .lte("date", curEnd);
+        const gross = (revs ?? []).reduce((s, r) => s + Number(r.gross_amount), 0);
+        dasEstimate = gross * (pct / 100);
+      }
+
       const nextMonth = addMonths(now, 1);
       const dueDate = new Date(nextMonth.getFullYear(), nextMonth.getMonth(), 20);
       return { dasEstimate, dueDate: format(dueDate, "yyyy-MM-dd") };
     },
   });
 
-  const fmt = (v: number) =>
-    new Intl.NumberFormat(language === "pt-BR" ? "pt-BR" : "en-US", {
-      style: "currency",
-      currency: "BRL",
-    }).format(v);
+  const fmt = (v: number) => formatCurrency(v, language);
 
   const fmtDate = (d: string) =>
     new Date(d + "T00:00:00").toLocaleDateString(language === "pt-BR" ? "pt-BR" : "en-US");
