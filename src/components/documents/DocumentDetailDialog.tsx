@@ -6,6 +6,7 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { format, parseISO } from "date-fns";
 import { getDocumentStatus } from "./DocumentCard";
 import { supabase } from "@/integrations/supabase/client";
+import { PdfCanvasPreview } from "./PdfCanvasPreview";
 import type { CompanyDocument } from "@/data/mockData";
 
 interface DocumentDetailDialogProps {
@@ -133,7 +134,7 @@ export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDown
           )}
 
           {!loading && previewUrl && isPdf && (
-            <embed src={previewUrl} type="application/pdf" className="w-full h-[600px] rounded-md" />
+            <PdfCanvasPreview url={previewUrl} />
           )}
 
           <Button variant="outline" className="w-full" onClick={() => onDownload(doc)}>
