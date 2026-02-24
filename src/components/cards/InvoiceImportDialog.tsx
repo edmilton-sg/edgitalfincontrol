@@ -160,8 +160,38 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
         installment_total: tx.installment_total || null,
       }));
 
-      const { error } = await supabase.from("card_transactions").insert(rows);
+      const { data: insertedTxs, error } = await supabase
+        .from("card_transactions")
+        .insert(rows)
+        .select("id, date, description, amount, category, installment_number, installment_total");
       if (error) throw error;
+
+      // Get card name for expense descriptions
+      const { data: cardInfo } = await supabase
+        .from("credit_cards")
+        .select("name")
+        .eq("id", cardId)
+        .single();
+      const cardName = cardInfo?.name || "Cartão";
+
+      // Create linked expenses for each inserted transaction
+      if (insertedTxs && insertedTxs.length > 0) {
+        const expenseRows = insertedTxs.map((tx) => ({
+          company_id: companyId,
+          date: tx.date,
+          description: `${tx.description} (${cardName})`,
+          category: tx.category || null,
+          amount: tx.amount,
+          payment_method: "creditCard",
+          installment_number: tx.installment_number,
+          installment_total: tx.installment_total,
+          is_personal: false,
+          is_recurring: false,
+          source_type: "card_transaction",
+          source_id: tx.id,
+        }));
+        await supabase.from("expenses").insert(expenseRows as any);
+      }
 
       // Upload original file
       if (selectedFile) {
@@ -179,6 +209,7 @@ export function InvoiceImportDialog({ open, onOpenChange, cardId, companyId }: I
       }
 
       queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       toast({ title: t("transactionsImported") });
       handleClose(false);
     } catch (err: any) {
