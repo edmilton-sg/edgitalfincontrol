@@ -1,75 +1,121 @@
 
-# Corrigir Dashboard para Exibir Dados Reais + Inserir Dados de Teste
+# Implementar Modulo de Impostos com Aliquota Customizavel e Valor Fixo MEI
 
-## Problema
+## Resumo
 
-Todos os componentes do dashboard (SummaryCards, RevenueExpenseChart, BalanceChart, CashFlowCard, TaxCard, RecentTransactions) utilizam dados estaticos do arquivo `mockData.ts`, que estao todos zerados ou vazios. Nenhum componente busca dados do banco de dados.
+Criar o modulo completo de Impostos permitindo que o usuario configure a porcentagem do imposto (aliquota) por empresa e tambem defina um valor fixo mensal para clientes MEI (Microempreendedor Individual), em vez de usar o percentual hardcoded de 6%.
 
-## Solucao
+## Nova tabela: `tax_settings`
 
-### Parte 1: Inserir dados de teste no banco
+Armazena as configuracoes de impostos por empresa:
 
-Inserir registros nas tabelas `revenues` e `expenses` para a empresa `c279ffa7-6028-4b8a-971f-fa67d4126c98` (EDGITAL THINKING SERVICE), cobrindo os ultimos 6 meses com dados variados:
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | PK |
+| company_id | uuid | FK para companies (unique) |
+| tax_mode | text | "percentage" ou "fixed" |
+| tax_percentage | numeric | Aliquota em % (ex: 6.0) |
+| fixed_amount | numeric | Valor fixo mensal para MEI |
+| created_at | timestamptz | Default now() |
+| updated_at | timestamptz | Default now() |
 
-- **Revenues**: ~3-5 registros por mes (set/2025 a fev/2026), com valores entre R$2.000 e R$30.000, diferentes metodos de pagamento e status
-- **Expenses**: ~3-5 registros por mes, com categorias variadas (Aluguel, Marketing, Software, Salarios, etc.), valores entre R$500 e R$8.000, mix de operacionais e pessoais
+- RLS: membros da empresa podem SELECT, INSERT, UPDATE
+- Constraint UNIQUE em company_id (uma config por empresa)
 
-### Parte 2: Reescrever componentes do dashboard
+## Nova tabela: `tax_payments`
 
-Todos os componentes serao alterados para buscar dados reais via `useQuery` + Supabase, usando o `selectedCompanyId` do `CompanyContext`.
+Registra o status de pagamento de cada guia mensal:
 
-#### 2.1 `SummaryCards.tsx`
-- Buscar revenues e expenses do mes atual e do mes anterior
-- Calcular: Receita Bruta mensal, Despesa mensal, Saldo (receita - despesa), Lucro Operacional
-- Calcular variacao percentual vs mes anterior
+| Coluna | Tipo | Descricao |
+|--------|------|-----------|
+| id | uuid | PK |
+| company_id | uuid | FK para companies |
+| reference_month | date | Primeiro dia do mes de competencia |
+| tax_type | text | "DAS" |
+| estimated_amount | numeric | Valor estimado |
+| paid_amount | numeric | Valor pago (nullable) |
+| due_date | date | Vencimento (dia 20 do mes seguinte) |
+| paid_date | date | Data pagamento (nullable) |
+| status | text | "pending", "paid", "overdue" |
+| created_at | timestamptz | Default now() |
 
-#### 2.2 `RevenueExpenseChart.tsx`
-- Buscar revenues e expenses dos ultimos 6 meses
-- Agrupar por mes e calcular totais de receita liquida e despesas
-- Renderizar o grafico de barras com dados reais
+- RLS: membros da empresa podem SELECT, INSERT, UPDATE, DELETE
+- Constraint UNIQUE em (company_id, reference_month, tax_type)
 
-#### 2.3 `BalanceChart.tsx`
-- Buscar revenues e expenses dos ultimos 6 meses
-- Calcular saldo acumulado mes a mes (receita liquida - despesas)
-- Renderizar o grafico de area com dados reais
+## Logica de calculo
 
-#### 2.4 `CashFlowCard.tsx`
-- Buscar revenues do mes atual
-- Calcular "Realizado" (status = paid) vs "Projetado" (total do mes)
-- Mostrar percentual de realizacao
+- **Modo Percentual**: `Receita Bruta do mes * (tax_percentage / 100)`
+- **Modo Fixo (MEI)**: usa o `fixed_amount` independente da receita
+- Se nao houver configuracao, usa 6% como padrao
 
-#### 2.5 `TaxCard.tsx`
-- Calcular uma estimativa de DAS baseada na receita bruta do mes (aliquota simplificada de 6%)
-- Exibir vencimento no dia 20 do mes seguinte
+## Arquivos a criar
 
-#### 2.6 `RecentTransactions.tsx`
-- Buscar as 10 transacoes mais recentes (revenues + expenses combinadas)
-- Exibir com valores positivos (receitas) e negativos (despesas)
+### 1. `src/pages/TaxesPage.tsx`
+- Busca `tax_settings` da empresa (ou usa padrao 6%)
+- Busca receitas mensais dos ultimos 12 meses
+- Busca `tax_payments` para saber o que ja foi pago
+- Calcula estimativas com base no modo configurado
+- Renderiza cards de resumo, tabela de guias e grafico
+- Botao para abrir configuracoes de impostos
 
-### Parte 3: Limpar mockData.ts
-- Remover as constantes de dashboard (summaryData, monthlyData, etc.) que nao serao mais utilizadas
-- Manter apenas os tipos (Revenue, Expense, etc.)
+### 2. `src/components/taxes/TaxSettingsDialog.tsx`
+- Dialog para configurar o modo de imposto da empresa
+- Radio group: "Percentual" ou "Valor Fixo (MEI)"
+- Se percentual: campo para informar a aliquota (%)
+- Se fixo: campo para informar o valor mensal (R$)
+- Salva/atualiza na tabela `tax_settings`
 
-## Arquivos modificados
+### 3. `src/components/taxes/TaxSummaryCards.tsx`
+- Card com DAS do mes atual (estimado ou fixo)
+- Card com total pago no ano
+- Card com guias vencidas
 
-- `src/components/dashboard/SummaryCards.tsx` - buscar dados reais
-- `src/components/dashboard/RevenueExpenseChart.tsx` - buscar dados reais
-- `src/components/dashboard/BalanceChart.tsx` - buscar dados reais
-- `src/components/dashboard/CashFlowCard.tsx` - buscar dados reais
-- `src/components/dashboard/TaxCard.tsx` - buscar dados reais
-- `src/components/dashboard/RecentTransactions.tsx` - buscar dados reais
-- `src/data/mockData.ts` - remover constantes de dashboard nao usadas
+### 4. `src/components/taxes/TaxTable.tsx`
+- Tabela com colunas: Competencia, Receita Bruta, Aliquota/Modo, Valor Estimado, Vencimento, Status, Acoes
+- Badge colorido para status (Pendente=amarelo, Pago=verde, Vencido=vermelho)
+- Botao para registrar pagamento
+
+### 5. `src/components/taxes/TaxPaymentDialog.tsx`
+- Dialog para registrar pagamento de uma guia
+- Campos: valor pago, data do pagamento
+- Insere/atualiza registro em `tax_payments`
+
+### 6. `src/components/taxes/TaxChart.tsx`
+- Grafico de barras: Estimado vs Pago nos ultimos 12 meses
+
+## Arquivos a modificar
+
+### 7. `src/App.tsx`
+- Substituir PlaceholderPage na rota `/taxes` pelo TaxesPage
+
+### 8. `src/i18n/translations.ts`
+- Adicionar traducoes: taxManagement, taxSettings, taxMode, percentageMode, fixedMode, taxPercentage, fixedAmount, meiFixedValue, estimatedTax, paidAmount, referenceMonth, taxStatus, markAsPaid, totalPaidYear, overdueGuides, paymentDate, paymentRegistered, noTaxData, taxHistory, estimatedVsPaid, settingsSaved, taxRate, allYear, configuredRate, configuredFixedValue
+
+### 9. `src/components/dashboard/TaxCard.tsx`
+- Atualizar para buscar `tax_settings` e usar a aliquota/valor fixo configurado em vez do 6% hardcoded
 
 ## Detalhes tecnicos
 
-Cada componente seguira o padrao:
+### Fluxo do usuario
+
 ```text
-1. import useCompany, useQuery, supabase
-2. Obter selectedCompanyId do CompanyContext
-3. useQuery com queryKey incluindo companyId e periodo
-4. Buscar revenues/expenses com filtros de data e company_id
-5. Calcular metricas a partir dos dados retornados
-6. Renderizar com loading state (Skeleton) quando carregando
+1. Acessa /taxes
+2. Clica em "Configurar Impostos" (engrenagem)
+3. Escolhe modo: Percentual (ex: 6%) ou Fixo MEI (ex: R$ 75,60)
+4. Salva
+5. A tabela recalcula automaticamente os valores estimados
+6. Para cada mes, pode clicar em "Registrar Pagamento"
+7. Informa valor pago e data -> status muda para "Pago"
 ```
 
-Os dados de teste serao inseridos via ferramenta de insert SQL diretamente nas tabelas revenues e expenses.
+### Queries principais
+
+- `tax_settings`: SELECT por company_id (unique, no maximo 1 registro)
+- `revenues`: agrupados por mes para calcular receita bruta mensal
+- `tax_payments`: SELECT por company_id + ano para historico
+
+### Determinacao de status
+
+- Se existe registro em `tax_payments` com status "paid" -> Pago
+- Se data atual > vencimento e nao pago -> Vencido
+- Caso contrario -> Pendente
