@@ -250,6 +250,22 @@ export const translations = {
     categorySaved: "Categoria salva",
     deleteCategory: "Excluir Categoria",
     deleteCategoryConfirm: "Tem certeza que deseja excluir esta categoria?",
+
+    // DRE
+    incomeStatement: "Demonstração do Resultado",
+    grossRevenue: "Receita Bruta",
+    deductions: "Deduções (Taxas)",
+    netRevenue: "Receita Líquida",
+    operatingExpenses: "Despesas Operacionais",
+    operatingResult: "Resultado Operacional",
+    personalExpenses: "Despesas Pessoais",
+    netResult: "Resultado Líquido",
+    percentOfRevenue: "% Receita",
+    previousMonth: "Mês Anterior",
+    nextMonth: "Próximo Mês",
+    noDataForPeriod: "Nenhum dado para este período",
+    monthlyComparison: "Comparativo Mensal",
+    uncategorized: "Sem Categoria",
   },
   en: {
     dashboard: "Dashboard",
@@ -485,6 +501,22 @@ export const translations = {
     categorySaved: "Category saved",
     deleteCategory: "Delete Category",
     deleteCategoryConfirm: "Are you sure you want to delete this category?",
+
+    // DRE
+    incomeStatement: "Income Statement",
+    grossRevenue: "Gross Revenue",
+    deductions: "Deductions (Fees)",
+    netRevenue: "Net Revenue",
+    operatingExpenses: "Operating Expenses",
+    operatingResult: "Operating Result",
+    personalExpenses: "Personal Expenses",
+    netResult: "Net Result",
+    percentOfRevenue: "% Revenue",
+    previousMonth: "Previous Month",
+    nextMonth: "Next Month",
+    noDataForPeriod: "No data for this period",
+    monthlyComparison: "Monthly Comparison",
+    uncategorized: "Uncategorized",
   },
 } as const;
 
