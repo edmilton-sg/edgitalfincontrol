@@ -270,6 +270,59 @@ export type Database = {
         }
         Relationships: []
       }
+      company_documents: {
+        Row: {
+          alert_days_before: number
+          company_id: string
+          content_type: string
+          created_at: string
+          description: string | null
+          expires_at: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          alert_days_before?: number
+          company_id: string
+          content_type: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          alert_days_before?: number
+          company_id?: string
+          content_type?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string | null
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_documents_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       company_members: {
         Row: {
           company_id: string
