@@ -39,7 +39,7 @@ export default function ExpensesPage() {
         .eq("company_id", selectedCompanyId)
         .order("date", { ascending: false });
       if (error) throw error;
-      return data.map((e) => ({
+      return data.map((e: any) => ({
         id: e.id,
         date: e.date,
         description: e.description,
@@ -55,6 +55,8 @@ export default function ExpensesPage() {
         is_recurring: e.is_recurring || false,
         recurrence_interval: e.recurrence_interval,
         recurrence_group_id: e.recurrence_group_id,
+        source_type: e.source_type || undefined,
+        source_id: e.source_id || undefined,
       })) as Expense[];
     },
     enabled: !!selectedCompanyId,

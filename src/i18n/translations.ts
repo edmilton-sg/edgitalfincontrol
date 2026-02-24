@@ -306,6 +306,12 @@ export const translations = {
     dueDayHint: "Dia do mês para vencimento do imposto (1-28)",
     receiptRequiredError: "Anexe um comprovante de pagamento",
     aiVerificationError: "Erro na verificação com IA",
+    linkedExpense: "Despesa vinculada",
+    managedByTaxModule: "Gerenciada pelo módulo de Impostos",
+    managedByCardModule: "Gerenciada pelo módulo de Cartões",
+    taxExpense: "Imposto",
+    cardExpense: "Cartão",
+    linkedSource: "Origem",
   },
   en: {
     dashboard: "Dashboard",
@@ -597,6 +603,12 @@ export const translations = {
     dueDayHint: "Day of month for tax due date (1-28)",
     receiptRequiredError: "Please attach a payment receipt",
     aiVerificationError: "AI verification error",
+    linkedExpense: "Linked expense",
+    managedByTaxModule: "Managed by Taxes module",
+    managedByCardModule: "Managed by Cards module",
+    taxExpense: "Tax",
+    cardExpense: "Card",
+    linkedSource: "Source",
   },
 } as const;
 

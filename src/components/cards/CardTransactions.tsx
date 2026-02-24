@@ -40,6 +40,15 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
   const [form, setForm] = useState<TransactionForm>(emptyForm);
   const [importOpen, setImportOpen] = useState(false);
 
+  // Fetch card name for expense description
+  const { data: cardData } = useQuery({
+    queryKey: ["credit_card_name", cardId],
+    queryFn: async () => {
+      const { data } = await supabase.from("credit_cards").select("name").eq("id", cardId).single();
+      return data;
+    },
+  });
+
   const { data: transactions = [] } = useQuery({
     queryKey: ["card_transactions", cardId],
     queryFn: async () => {
@@ -55,7 +64,7 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
 
   const addTx = useMutation({
     mutationFn: async () => {
-      const { error } = await supabase.from("card_transactions").insert({
+      const { data: inserted, error } = await supabase.from("card_transactions").insert({
         card_id: cardId,
         company_id: companyId,
         date: form.date,
@@ -64,11 +73,31 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
         category: form.category || null,
         installment_number: parseInt(form.installment_number),
         installment_total: parseInt(form.installment_total),
-      });
+      }).select("id").single();
       if (error) throw error;
+
+      // Create linked expense
+      if (inserted) {
+        const cardName = cardData?.name || "Cartão";
+        await supabase.from("expenses").insert({
+          company_id: companyId,
+          date: form.date,
+          description: `${form.description} (${cardName})`,
+          category: form.category || null,
+          amount: parseFloat(form.amount),
+          payment_method: "creditCard",
+          installment_number: parseInt(form.installment_number),
+          installment_total: parseInt(form.installment_total),
+          is_personal: false,
+          is_recurring: false,
+          source_type: "card_transaction",
+          source_id: inserted.id,
+        } as any);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       closeDialog();
       toast({ title: t("transactionAdded") });
     },
@@ -86,9 +115,23 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
         installment_total: parseInt(form.installment_total),
       }).eq("id", editingTx);
       if (error) throw error;
+
+      // Update linked expense
+      const cardName = cardData?.name || "Cartão";
+      await (supabase.from("expenses") as any).update({
+        date: form.date,
+        description: `${form.description} (${cardName})`,
+        category: form.category || null,
+        amount: parseFloat(form.amount),
+        installment_number: parseInt(form.installment_number),
+        installment_total: parseInt(form.installment_total),
+      })
+        .eq("source_type", "card_transaction")
+        .eq("source_id", editingTx);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       closeDialog();
       toast({ title: t("transactionUpdated") });
     },
@@ -96,11 +139,17 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
 
   const deleteTx = useMutation({
     mutationFn: async (id: string) => {
+      // Delete linked expense first
+      await (supabase.from("expenses") as any).delete()
+        .eq("source_type", "card_transaction")
+        .eq("source_id", id);
+
       const { error } = await supabase.from("card_transactions").delete().eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["card_transactions", cardId] });
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
       setDeletingTxId(null);
       toast({ title: t("transactionDeleted") });
     },

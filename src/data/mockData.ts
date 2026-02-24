@@ -39,6 +39,8 @@ export interface Expense {
   is_recurring: boolean;
   recurrence_interval?: string;
   recurrence_group_id?: string;
+  source_type?: string;
+  source_id?: string;
 }
 
 export interface Attachment {

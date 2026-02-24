@@ -368,6 +368,8 @@ export type Database = {
           payment_method: string | null
           recurrence_group_id: string | null
           recurrence_interval: string | null
+          source_id: string | null
+          source_type: string | null
         }
         Insert: {
           amount?: number
@@ -387,6 +389,8 @@ export type Database = {
           payment_method?: string | null
           recurrence_group_id?: string | null
           recurrence_interval?: string | null
+          source_id?: string | null
+          source_type?: string | null
         }
         Update: {
           amount?: number
@@ -406,6 +410,8 @@ export type Database = {
           payment_method?: string | null
           recurrence_group_id?: string | null
           recurrence_interval?: string | null
+          source_id?: string | null
+          source_type?: string | null
         }
         Relationships: [
           {

@@ -172,6 +172,42 @@ export function TaxPaymentDialog({ open, onOpenChange, guide, onSaved }: TaxPaym
       paymentId = (inserted as any)?.id;
     }
 
+    // Sync expense: upsert linked expense
+    if (paymentId) {
+      const refDate = new Date(guide.referenceMonth);
+      const monthNames = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+      const expenseDesc = `DAS - ${monthNames[refDate.getMonth()]}/${refDate.getFullYear()}`;
+
+      // Check if linked expense already exists
+      const { data: existingExpense } = await (supabase
+        .from("expenses") as any)
+        .select("id")
+        .eq("source_type", "tax_payment")
+        .eq("source_id", paymentId)
+        .maybeSingle();
+
+      if (existingExpense) {
+        await supabase.from("expenses").update({
+          date: paidDate,
+          description: expenseDesc,
+          amount: amount,
+        } as any).eq("id", existingExpense.id);
+      } else {
+        await supabase.from("expenses").insert({
+          company_id: selectedCompanyId,
+          date: paidDate,
+          description: expenseDesc,
+          category: "impostos",
+          amount: amount,
+          payment_method: "pix",
+          is_personal: false,
+          is_recurring: false,
+          source_type: "tax_payment",
+          source_id: paymentId,
+        } as any);
+      }
+    }
+
     // Upload receipt
     if (paymentId && selectedFile) {
       const timestamp = Date.now();
