@@ -1,13 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import * as pdfjsLib from "pdfjs-dist";
+import workerSrc from "pdfjs-dist/build/pdf.worker.mjs?url";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
-// Configure worker inline (no CDN)
-pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-  "pdfjs-dist/build/pdf.worker.mjs",
-  import.meta.url
-).toString();
+// Configure worker using Vite's ?url import (bundled locally, no CDN)
+pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
 
 interface PdfCanvasPreviewProps {
   url: string;
