@@ -1,1 +1,4 @@
 project_id = "zxbqhligukyalkwgqbqr"
+
+[functions.verify-tax-receipt]
+verify_jwt = false
