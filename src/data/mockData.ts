@@ -1,31 +1,5 @@
 // Types kept as reference for the app
-// Mock data arrays removed - data now comes from the database
-
-export const summaryData = {
-  currentBalance: 0,
-  currentBalanceChange: 0,
-  monthlyRevenue: 0,
-  monthlyRevenueChange: 0,
-  monthlyExpense: 0,
-  monthlyExpenseChange: 0,
-  operatingProfit: 0,
-  operatingProfitChange: 0,
-};
-
-export const monthlyData: { month: string; revenue: number; expense: number }[] = [];
-export const balanceData: { month: string; balance: number }[] = [];
-
-export const cashFlowData = {
-  projected: 0,
-  realized: 0,
-};
-
-export const taxData = {
-  nextDasAmount: 0,
-  dueDate: "",
-};
-
-export const transactions: { id: number; name: string; date: string; amount: number; status: "paid" | "pending" | "overdue" }[] = [];
+// Data now comes from the database via useQuery
 
 // Revenue types
 export type PaymentMethod = "pix" | "bankSlip" | "creditCard" | "transfer" | "cash";
