@@ -1,10 +1,12 @@
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { format, parseISO } from "date-fns";
 import { getDocumentStatus } from "./DocumentCard";
+import { supabase } from "@/integrations/supabase/client";
 import type { CompanyDocument } from "@/data/mockData";
 
 interface DocumentDetailDialogProps {
@@ -16,6 +18,28 @@ interface DocumentDetailDialogProps {
 
 export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDownload }: DocumentDetailDialogProps) {
   const { t } = useLanguage();
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !doc) {
+      setSignedUrl(null);
+      return;
+    }
+
+    const isPreviewable = doc.content_type.startsWith("image/") || doc.content_type === "application/pdf";
+    if (!isPreviewable) return;
+
+    setLoading(true);
+    supabase.storage
+      .from("attachments")
+      .createSignedUrl(doc.file_path, 3600)
+      .then(({ data, error }) => {
+        if (!error && data?.signedUrl) setSignedUrl(data.signedUrl);
+      })
+      .finally(() => setLoading(false));
+  }, [open, doc?.id]);
+
   if (!doc) return null;
 
   const status = getDocumentStatus(doc);
@@ -28,10 +52,12 @@ export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDown
   const cfg = statusConfig[status];
 
   const isImage = doc.content_type.startsWith("image/");
+  const isPdf = doc.content_type === "application/pdf";
+  const hasPreview = isImage || isPdf;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className={hasPreview ? "max-w-3xl" : "max-w-lg"}>
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {doc.title}
@@ -56,11 +82,25 @@ export function DocumentDetailDialog({ document: doc, open, onOpenChange, onDown
             )}
           </div>
 
-          {isImage && (
+          {loading && (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          )}
+
+          {!loading && signedUrl && isImage && (
             <img
-              src={`${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/authenticated/${doc.file_path}`}
+              src={signedUrl}
               alt={doc.title}
-              className="rounded-md max-h-64 object-contain w-full"
+              className="rounded-md max-h-[500px] object-contain w-full"
+            />
+          )}
+
+          {!loading && signedUrl && isPdf && (
+            <iframe
+              src={signedUrl}
+              title={doc.title}
+              className="w-full h-[500px] rounded-md border"
             />
           )}
 
