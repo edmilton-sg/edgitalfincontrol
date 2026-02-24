@@ -1,43 +1,77 @@
 
-
-# Remover Campo "Fixa" de Despesas (Redundancia com Recorrente)
+# Implementar Modulo DRE (Demonstracao do Resultado do Exercicio)
 
 ## Resumo
 
-O campo "Fixa" (is_fixed) e o campo "Recorrente" (is_recurring) representam conceitos sobrepostos. A proposta e remover o campo "Fixa" de toda a interface, mantendo apenas "Recorrente" com seus intervalos (semanal, mensal, anual).
+O DRE e um relatorio financeiro que mostra as receitas, despesas e o resultado (lucro ou prejuizo) de um periodo. Ele sera construido a partir dos dados ja existentes nas tabelas `revenues` e `expenses`, sem necessidade de novas tabelas no banco.
 
-## Alteracoes
+## Estrutura do DRE
 
-### 1. Formulario de Despesas (`ExpenseForm.tsx`)
-- Remover `is_fixed` do schema Zod e dos defaultValues
-- Remover o Switch "Fixa" do formulario (linhas 207-212)
-- No onSubmit, setar `is_fixed: false` fixo no objeto Expense para compatibilidade com o banco
+```text
+(+) Receita Bruta
+(-) Deducoes (taxas/fees)
+(=) Receita Liquida
+(-) Despesas Operacionais (agrupadas por categoria)
+(=) Resultado Operacional (EBITDA)
+(-) Despesas Pessoais
+(=) Resultado Liquido
+```
 
-### 2. Tabela de Despesas (`ExpenseTable.tsx`)
-- Remover a coluna "Fixa" do header
-- Remover a celula com icone Check/X de is_fixed
-- Ajustar o colSpan do footer
+## Funcionalidades
 
-### 3. Dialog de Detalhes (`ExpenseDetailDialog.tsx`)
-- Remover a linha que exibe "Fixa" com Check/X
+- Filtro por periodo (mes/ano) com seletor de mes
+- Visualizacao em formato de tabela hierarquica com linhas de totais
+- Grafico de barras comparando meses (ultimos 6 ou 12 meses)
+- Indicadores de variacao percentual vs mes anterior
+- Exportar/imprimir (botao futuro, placeholder)
 
-### 4. Filtros de Despesas (`ExpenseFilters.tsx`)
-- Remover o filtro de tipo (fixo/variavel) completamente
-- Remover as props `typeFilter` e `onTypeChange`
+## Arquivos a criar/modificar
 
-### 5. Pagina de Despesas (`ExpensesPage.tsx`)
-- Remover o estado `typeFilter` e `setTypeFilter`
-- Remover a logica de filtro `matchType` no useMemo
-- Remover as props de tipo do componente `ExpenseFilters`
+### 1. Nova pagina `src/pages/DrePage.tsx`
+- Componente principal com filtro de periodo (mes/ano)
+- Busca dados de `revenues` e `expenses` do periodo selecionado via useQuery
+- Calcula as linhas do DRE a partir dos dados brutos
+- Renderiza o componente DreTable e DreChart
 
-### 6. Tipo Expense (`mockData.ts`)
-- Manter `is_fixed` no tipo por compatibilidade com o banco, mas ele nao sera mais exibido/editado na interface
+### 2. Novo componente `src/components/dre/DreTable.tsx`
+- Tabela hierarquica com as linhas do DRE
+- Linhas de grupo (Receita Bruta, Deducoes, Despesas por categoria, etc.)
+- Linhas de resultado com destaque visual (negrito, cor verde/vermelha)
+- Coluna de valor e coluna de percentual sobre receita bruta (analise vertical)
 
-## Arquivos modificados
+### 3. Novo componente `src/components/dre/DreChart.tsx`
+- Grafico de barras com Recharts mostrando Receita Liquida vs Despesas vs Resultado nos ultimos meses
+- Reutiliza padroes do RevenueExpenseChart existente
 
-- `src/components/expenses/ExpenseForm.tsx`
-- `src/components/expenses/ExpenseTable.tsx`
-- `src/components/expenses/ExpenseDetailDialog.tsx`
-- `src/components/expenses/ExpenseFilters.tsx`
-- `src/pages/ExpensesPage.tsx`
+### 4. Novo componente `src/components/dre/DrePeriodFilter.tsx`
+- Seletor de mes/ano para navegar entre periodos
+- Botoes de anterior/proximo mes
 
+### 5. Modificar `src/App.tsx`
+- Substituir o PlaceholderPage da rota `/dre` pelo novo DrePage
+
+### 6. Modificar `src/i18n/translations.ts`
+- Adicionar traducoes para os labels do DRE:
+  - grossRevenue, deductions, netRevenue, operatingExpenses, operatingResult, personalExpenses, netResult, percentOfRevenue, period, previousMonth, nextMonth, incomeStatement, noDataForPeriod
+
+## Detalhes tecnicos
+
+### Calculo do DRE (dentro do DrePage)
+- **Receita Bruta**: soma de `gross_amount` de todas as revenues do periodo
+- **Deducoes**: soma de `fee_amount` de todas as revenues
+- **Receita Liquida**: soma de `net_amount` (ou Bruta - Deducoes)
+- **Despesas Operacionais**: soma de `amount` de expenses onde `is_personal = false`, agrupadas por categoria
+- **Despesas Pessoais**: soma de `amount` de expenses onde `is_personal = true`
+- **Resultado Operacional**: Receita Liquida - Despesas Operacionais
+- **Resultado Liquido**: Resultado Operacional - Despesas Pessoais
+
+### Queries
+- Revenues: `supabase.from("revenues").select("*").eq("company_id", id).gte("date", startOfMonth).lte("date", endOfMonth)`
+- Expenses: `supabase.from("expenses").select("*").eq("company_id", id).gte("date", startOfMonth).lte("date", endOfMonth)`
+- Para o grafico mensal: buscar os ultimos 6 meses de dados
+
+### Componentes UI reutilizados
+- Card, Table (shadcn/ui)
+- Recharts (BarChart) - mesmo padrao do dashboard
+- Select para periodo
+- formatCurrency do `src/lib/formatCurrency.ts`
