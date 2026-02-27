@@ -27,17 +27,28 @@ export function PdfCanvasPreview({ url }: PdfCanvasPreviewProps) {
       try {
         setLoading(true);
         setError(false);
+
         const response = await fetch(url);
         const arrayBuffer = await response.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+        let pdf: pdfjsLib.PDFDocumentProxy;
+        try {
+          pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+        } catch (workerError) {
+          console.warn("PDF worker falhou, tentando fallback sem worker", workerError);
+          pdf = await pdfjsLib.getDocument({ data: arrayBuffer, disableWorker: true } as any).promise;
+        }
+
         if (cancelled) {
           pdf.destroy();
           return;
         }
+
         pdfDocRef.current = pdf;
         setNumPages(pdf.numPages);
         setCurrentPage(1);
-      } catch {
+      } catch (err) {
+        console.error("Erro ao carregar PDF no preview:", err);
         if (!cancelled) setError(true);
       } finally {
         if (!cancelled) setLoading(false);
@@ -59,21 +70,26 @@ export function PdfCanvasPreview({ url }: PdfCanvasPreviewProps) {
     let cancelled = false;
 
     async function renderPage() {
-      const pdf = pdfDocRef.current!;
-      const page = await pdf.getPage(currentPage);
-      if (cancelled) return;
+      try {
+        const pdf = pdfDocRef.current!;
+        const page = await pdf.getPage(currentPage);
+        if (cancelled) return;
 
-      const canvas = canvasRef.current!;
-      const containerWidth = canvas.parentElement?.clientWidth ?? 700;
-      const unscaledViewport = page.getViewport({ scale: 1 });
-      const scale = containerWidth / unscaledViewport.width;
-      const viewport = page.getViewport({ scale });
+        const canvas = canvasRef.current!;
+        const containerWidth = canvas.parentElement?.clientWidth ?? 700;
+        const unscaledViewport = page.getViewport({ scale: 1 });
+        const scale = containerWidth / unscaledViewport.width;
+        const viewport = page.getViewport({ scale });
 
-      canvas.width = viewport.width;
-      canvas.height = viewport.height;
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
 
-      const ctx = canvas.getContext("2d")!;
-      await page.render({ canvasContext: ctx, viewport }).promise;
+        const ctx = canvas.getContext("2d")!;
+        await page.render({ canvasContext: ctx, viewport }).promise;
+      } catch (err) {
+        console.error("Erro ao renderizar página do PDF:", err);
+        if (!cancelled) setError(true);
+      }
     }
 
     renderPage();
