@@ -19,12 +19,14 @@ const sourceLabels: Record<string, TranslationKey> = {
   tax_payment: "taxExpense",
   card_transaction: "cardExpense",
   pro_labore: "proLaboreExpense",
+  payroll: "payrollExpense",
 };
 
 const sourceTooltips: Record<string, TranslationKey> = {
   tax_payment: "managedByTaxModule",
   card_transaction: "managedByCardModule",
   pro_labore: "managedByProLaboreModule",
+  payroll: "managedByPayrollModule",
 };
 
 export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTableProps) {

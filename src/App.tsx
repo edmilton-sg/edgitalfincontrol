@@ -13,6 +13,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import CardsPage from "./pages/CardsPage";
 import PlaceholderPage from "./pages/PlaceholderPage";
 import ProLaborePage from "./pages/ProLaborePage";
+import EmployeesPage from "./pages/EmployeesPage";
 import DocumentsPage from "./pages/DocumentsPage";
 import TaxesPage from "./pages/TaxesPage";
 import DrePage from "./pages/DrePage";
@@ -57,7 +58,7 @@ function ProtectedRoutes() {
         <Route path="/cards" element={<CardsPage />} />
         <Route path="/dre" element={<DrePage />} />
         <Route path="/taxes" element={<TaxesPage />} />
-        <Route path="/employees" element={<PlaceholderPage titleKey="employees" />} />
+        <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/pro-labore" element={<ProLaborePage />} />
         <Route path="/documents" element={<DocumentsPage />} />
         <Route path="/reports" element={<PlaceholderPage titleKey="reports" />} />
