@@ -1,6 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import type { EmployeeRow } from "./EmployeeTable";
 
 interface Props {
@@ -19,13 +20,13 @@ export function EmployeeDetailDialog({ open, onOpenChange, item }: Props) {
     { label: t("employeePosition"), value: item.position || "—" },
     { label: t("employeeDepartment"), value: item.department || "—" },
     { label: t("employeeSalary"), value: formatCurrency(item.salary, language) },
-    { label: t("employeeHireDate"), value: item.hire_date.split("-").reverse().join("/") },
+    { label: t("employeeHireDate"), value: formatDateString(item.hire_date, language) },
     { label: t("status"), value: t(item.status === "active" ? "employeeActive" : "employeeTerminated") },
     { label: t("proLaboreNotes"), value: item.notes || "—" },
   ];
 
   if (item.termination_date) {
-    rows.splice(7, 0, { label: t("employeeTerminationDate"), value: item.termination_date.split("-").reverse().join("/") });
+    rows.splice(7, 0, { label: t("employeeTerminationDate"), value: formatDateString(item.termination_date, language) });
   }
 
   return (
