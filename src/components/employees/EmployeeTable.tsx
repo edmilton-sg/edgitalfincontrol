@@ -46,7 +46,7 @@ export function EmployeeTable({ data, onView, onEdit, onDelete }: Props) {
                 <TableCell>{emp.position || "—"}</TableCell>
                 <TableCell>{emp.department || "—"}</TableCell>
                 <TableCell className="text-right">{formatCurrency(emp.salary, language)}</TableCell>
-                <TableCell>{new Date(emp.hire_date).toLocaleDateString(language)}</TableCell>
+                <TableCell>{emp.hire_date.split("-").reverse().join("/")}</TableCell>
                 <TableCell>
                   <Badge variant={emp.status === "active" ? "default" : "secondary"}>
                     {t(emp.status === "active" ? "employeeActive" : "employeeTerminated")}

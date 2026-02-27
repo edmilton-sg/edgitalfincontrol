@@ -19,13 +19,13 @@ export function EmployeeDetailDialog({ open, onOpenChange, item }: Props) {
     { label: t("employeePosition"), value: item.position || "—" },
     { label: t("employeeDepartment"), value: item.department || "—" },
     { label: t("employeeSalary"), value: formatCurrency(item.salary, language) },
-    { label: t("employeeHireDate"), value: new Date(item.hire_date).toLocaleDateString(language) },
+    { label: t("employeeHireDate"), value: item.hire_date.split("-").reverse().join("/") },
     { label: t("status"), value: t(item.status === "active" ? "employeeActive" : "employeeTerminated") },
     { label: t("proLaboreNotes"), value: item.notes || "—" },
   ];
 
   if (item.termination_date) {
-    rows.splice(7, 0, { label: t("employeeTerminationDate"), value: new Date(item.termination_date).toLocaleDateString(language) });
+    rows.splice(7, 0, { label: t("employeeTerminationDate"), value: item.termination_date.split("-").reverse().join("/") });
   }
 
   return (
