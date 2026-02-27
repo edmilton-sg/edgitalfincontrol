@@ -334,6 +334,21 @@ export const translations = {
     deleteDocument: "Excluir documento",
     noDocumentAlerts: "Nenhum documento com alerta",
     documentExpiry: "Validade",
+
+    // Pro-labore
+    proLaboreTitle: "Pró-labore",
+    newProLabore: "Novo Pró-labore",
+    editProLabore: "Editar Pró-labore",
+    memberName: "Nome do Sócio",
+    cpf: "CPF",
+    inssAmount: "INSS",
+    irrfAmount: "IRRF",
+    proLaboreExpense: "Pró-labore",
+    managedByProLaboreModule: "Gerenciado pelo módulo de Pró-labore",
+    proLaboreDetail: "Detalhes do Pró-labore",
+    proLaboreNotes: "Observações",
+    proLaboreWithdrawals: "Retiradas de Pró-labore",
+    all: "Todos",
   },
   en: {
     dashboard: "Dashboard",
@@ -653,6 +668,21 @@ export const translations = {
     deleteDocument: "Delete document",
     noDocumentAlerts: "No document alerts",
     documentExpiry: "Expiry",
+
+    // Pro-labore
+    proLaboreTitle: "Pro-labore",
+    newProLabore: "New Pro-labore",
+    editProLabore: "Edit Pro-labore",
+    memberName: "Member Name",
+    cpf: "CPF",
+    inssAmount: "INSS",
+    irrfAmount: "IRRF",
+    proLaboreExpense: "Pro-labore",
+    managedByProLaboreModule: "Managed by Pro-labore module",
+    proLaboreDetail: "Pro-labore Details",
+    proLaboreNotes: "Notes",
+    proLaboreWithdrawals: "Pro-labore Withdrawals",
+    all: "All",
   },
 } as const;
 

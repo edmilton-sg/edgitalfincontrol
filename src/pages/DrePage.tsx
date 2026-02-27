@@ -46,10 +46,25 @@ export default function DrePage() {
     queryFn: async () => {
       const { data } = await supabase
         .from("expenses")
-        .select("amount, category, is_personal")
+        .select("amount, category, is_personal, source_type")
         .eq("company_id", selectedCompanyId!)
         .gte("date", periodStart)
         .lte("date", periodEnd);
+      return data ?? [];
+    },
+  });
+
+  const { data: proLabore } = useQuery({
+    queryKey: ["dre-prolabore", selectedCompanyId, periodStart],
+    enabled: !!selectedCompanyId,
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("pro_labore")
+        .select("net_amount")
+        .eq("company_id", selectedCompanyId!)
+        .eq("status", "paid")
+        .gte("reference_month", periodStart)
+        .lte("reference_month", periodEnd);
       return data ?? [];
     },
   });
@@ -105,14 +120,16 @@ export default function DrePage() {
     const deductions = revenues.reduce((s, r) => s + Number(r.fee_amount), 0);
     const netRevenue = revenues.reduce((s, r) => s + Number(r.net_amount), 0);
 
-    const opExpenses = expenses.filter((e) => !e.is_personal);
+    // Exclude pro_labore-sourced expenses from operating expenses (they're shown separately)
+    const opExpenses = expenses.filter((e) => !e.is_personal && e.source_type !== "pro_labore");
     const personalExpenses = expenses.filter((e) => e.is_personal);
 
     const totalOpExpenses = opExpenses.reduce((s, e) => s + Number(e.amount), 0);
     const totalPersonal = personalExpenses.reduce((s, e) => s + Number(e.amount), 0);
+    const totalProLabore = (proLabore ?? []).reduce((s, p) => s + Number(p.net_amount), 0);
 
     const operatingResult = netRevenue - totalOpExpenses;
-    const netResult = operatingResult - totalPersonal;
+    const netResult = operatingResult - totalPersonal - totalProLabore;
 
     const pct = (v: number) => (grossRevenue === 0 ? 0 : (v / grossRevenue) * 100);
 
@@ -139,11 +156,12 @@ export default function DrePage() {
         })),
       { label: `(=) ${t("operatingResult")}`, value: operatingResult, percent: pct(operatingResult), type: "subtotal" },
       { label: `(-) ${t("personalExpenses")}`, value: -totalPersonal, percent: pct(-totalPersonal), type: "item" },
+      { label: `(-) ${t("proLaboreWithdrawals")}`, value: -totalProLabore, percent: pct(-totalProLabore), type: "item" },
       { label: `(=) ${t("netResult")}`, value: netResult, percent: pct(netResult), type: "total" },
     ];
 
     return lines;
-  }, [revenues, expenses, t]);
+  }, [revenues, expenses, proLabore, t]);
 
   // Build chart data
   const chartData = useMemo<DreMonthData[]>(() => {
