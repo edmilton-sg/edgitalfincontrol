@@ -476,6 +476,62 @@ export type Database = {
           },
         ]
       }
+      pro_labore: {
+        Row: {
+          amount: number
+          company_id: string
+          cpf: string | null
+          created_at: string
+          id: string
+          inss_amount: number
+          irrf_amount: number
+          member_name: string
+          net_amount: number
+          notes: string | null
+          payment_date: string | null
+          reference_month: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          company_id: string
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          inss_amount?: number
+          irrf_amount?: number
+          member_name: string
+          net_amount: number
+          notes?: string | null
+          payment_date?: string | null
+          reference_month: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          company_id?: string
+          cpf?: string | null
+          created_at?: string
+          id?: string
+          inss_amount?: number
+          irrf_amount?: number
+          member_name?: string
+          net_amount?: number
+          notes?: string | null
+          payment_date?: string | null
+          reference_month?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pro_labore_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
