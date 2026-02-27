@@ -1,69 +1,78 @@
 
-Objetivo atualizado: resolver o preview de PDF com uma abordagem que não dependa do visualizador nativo do navegador (que pode falhar no Edge dentro de contexto embutido), mantendo a experiência simples e estável.
 
-1) Diagnóstico consolidado (com base no que já está acontecendo)
-- O download do arquivo funciona: as requisições do backend retornam 200 e conteúdo PDF válido.
-- O componente já usa Blob URL local (`blob:`), então o problema principal não é permissão/URL.
-- Mesmo assim, o `<embed>` ainda não renderiza no seu cenário atual.
-- Conclusão prática: o bloqueio está na camada de renderização nativa do navegador (plugin/viewer), não no backend.
-- Há também um warning de React persistente no mesmo diálogo (`Function components cannot be given refs`) que precisamos eliminar no mesmo ajuste.
+## Módulo Pró-labore — Plano de Implementação
 
-2) Nova abordagem (mais confiável)
-- Substituir preview de PDF via `<embed>` por renderização em `<canvas>` usando `pdfjs-dist` com worker local empacotado pelo Vite.
-- Isso evita depender do viewer nativo do navegador e funciona em contexto embutido (onde `<embed>/<iframe>/<object>` pode falhar).
-- Manter o fluxo atual de Blob URL para baixar o arquivo privado.
-- Imagens continuam no `<img>` como já está.
+### O que é
+Módulo para registrar retiradas de pró-labore dos sócios da empresa, com integração automática nos módulos de Despesas e DRE.
 
-3) Escopo de alteração
-- `package.json` + lockfile: reintroduzir `pdfjs-dist`.
-- `src/components/documents/DocumentDetailDialog.tsx`: trocar a parte de render de PDF.
-- Novo componente para organização:
-  - `src/components/documents/PdfCanvasPreview.tsx` (renderização do PDF em canvas com paginação simples).
+### 1. Banco de dados
 
-4) Detalhes técnicos da implementação
-- Carregamento do arquivo:
-  - manter `storage.download(doc.file_path)`.
-  - manter `URL.createObjectURL(blob)` com cleanup via `URL.revokeObjectURL`.
-- Render do PDF:
-  - no `PdfCanvasPreview`, buscar bytes a partir do Blob URL (`fetch(previewUrl)` + `arrayBuffer`).
-  - usar `pdfjs-dist` para abrir documento e renderizar página no `canvas`.
-  - configurar worker local (sem CDN), para evitar o erro antigo de “Failed to fetch dynamically imported module”.
-- UX mínima:
-  - mostrar spinner ao renderizar página.
-  - botões “Anterior / Próxima” quando houver múltiplas páginas.
-  - fallback claro: se falhar renderização, mostrar mensagem e manter botão de download.
-- Warning de ref:
-  - simplificar estrutura do header do diálogo para não usar composição que possa receber `ref` indevido.
-  - manter `DialogDescription` válido para acessibilidade (elimina warning de descrição ausente).
+Criar tabela `pro_labore`:
 
-5) Sequência de execução (ordem segura)
-- Passo A: reintroduzir dependência `pdfjs-dist`.
-- Passo B: criar `PdfCanvasPreview` isolado e testável.
-- Passo C: integrar no `DocumentDetailDialog` apenas para `application/pdf`.
-- Passo D: manter fluxo atual para imagens e download.
-- Passo E: ajustar header/description para eliminar warnings de console.
+| Coluna | Tipo | Notas |
+|--------|------|-------|
+| id | uuid PK | gen_random_uuid() |
+| company_id | uuid NOT NULL | |
+| member_name | text NOT NULL | Nome do sócio |
+| cpf | text | CPF do sócio (opcional) |
+| amount | numeric NOT NULL | Valor bruto |
+| inss_amount | numeric DEFAULT 0 | INSS retido |
+| irrf_amount | numeric DEFAULT 0 | IRRF retido |
+| net_amount | numeric NOT NULL | Valor líquido |
+| reference_month | date NOT NULL | Mês de competência |
+| payment_date | date | Data do pagamento efetivo |
+| status | text DEFAULT 'pending' | pending / paid |
+| notes | text | Observações |
+| created_at | timestamptz DEFAULT now() | |
 
-6) Critérios de aceite
-- PDF abre no modal em Edge no seu ambiente atual.
-- Imagens seguem abrindo normalmente.
-- Download continua funcionando para qualquer tipo de arquivo.
-- Trocar entre documentos não reaproveita preview antigo.
-- Console sem warning de `Function components cannot be given refs` nesse diálogo.
-- Sem vazamento de memória (Blob URLs revogadas corretamente).
+- RLS: `is_company_member(company_id, auth.uid())` para SELECT, INSERT, UPDATE, DELETE.
+- Ao criar/atualizar pró-labore com status `paid`, criar/atualizar despesa vinculada via `source_type = 'pro_labore'` e `source_id = pro_labore.id`.
+- Ao deletar, remover despesa vinculada.
 
-7) Validação manual fim a fim
-- Em `/documents`:
-  - abrir PDF de 1 página e confirmar render.
-  - abrir PDF de múltiplas páginas e navegar entre páginas.
-  - abrir PNG/JPG e validar preview.
-  - fechar/reabrir documentos em sequência para validar cleanup.
-  - testar no Edge e Chrome.
-  - simular erro (arquivo indisponível) e confirmar fallback + download.
+### 2. Integração com módulos existentes
 
-8) Riscos e mitigação
-- Risco: PDF grande ficar lento na primeira renderização.
-  - Mitigação: spinner e renderização por página.
-- Risco: configuração do worker quebrar em build.
-  - Mitigação: usar worker local via import do bundle (sem CDN) e fallback amigável para erro.
-- Risco: regressão visual no modal.
-  - Mitigação: manter dimensões atuais e alterar apenas o bloco de preview do PDF.
+**Despesas (ExpenseTable):**
+- Adicionar `pro_labore` aos mapas `sourceLabels` e `sourceTooltips` para exibir badge "Pró-labore" em despesas geradas automaticamente.
+
+**DRE (DrePage):**
+- Adicionar linha separada para Pró-labore entre Resultado Operacional e Resultado Líquido (já que é retirada de sócio, não despesa operacional). Buscar da tabela `pro_labore` diretamente.
+
+**Dashboard:**
+- Despesas de pró-labore já serão incluídas automaticamente via tabela `expenses` (source_type = 'pro_labore').
+
+### 3. Componentes a criar
+
+```text
+src/pages/ProLaborePage.tsx           — Página principal (CRUD)
+src/components/prolabore/
+  ProLaboreTable.tsx                  — Tabela de registros
+  ProLaboreForm.tsx                   — Dialog de criação/edição
+  ProLaboreDetailDialog.tsx           — Dialog de visualização
+```
+
+### 4. Funcionalidades da página
+
+- Listagem com filtros por período e status (pendente/pago)
+- Criar novo pró-labore: nome do sócio, CPF, valor bruto, INSS, IRRF (cálculo automático do líquido)
+- Marcar como pago (com data de pagamento) → gera despesa vinculada automaticamente
+- Editar e excluir (com exclusão da despesa vinculada)
+- Detalhes com breakdown: bruto, INSS, IRRF, líquido
+
+### 5. Traduções
+
+Adicionar ~20 chaves em pt-BR e en: `proLaboreTitle`, `newProLabore`, `memberName`, `cpf`, `grossAmount`, `inssAmount`, `irrfAmount`, `netAmount`, `referenceMonth`, `paymentDate`, `proLaboreExpense`, `managedByProLaboreModule`, etc.
+
+### 6. Rota e sidebar
+
+- Substituir `PlaceholderPage` por `ProLaborePage` na rota `/pro-labore` em `App.tsx`.
+- Sidebar já está configurado.
+
+### 7. Sequência de execução
+
+1. Migration: criar tabela `pro_labore` com RLS
+2. Criar componentes (Table, Form, DetailDialog, Page)
+3. Adicionar traduções
+4. Integrar na rota
+5. Atualizar ExpenseTable (sourceLabels/sourceTooltips)
+6. Atualizar DRE para incluir linha de pró-labore
+
