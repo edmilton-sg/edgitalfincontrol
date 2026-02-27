@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { calcINSS, calcIRRF } from "@/lib/calcProLabore";
 import type { ProLaboreRow } from "./ProLaboreTable";
 
 interface Props {
@@ -39,6 +40,17 @@ export function ProLaboreForm({ open, onOpenChange, onSave, editingItem }: Props
   const amount = watch("amount") || 0;
   const inss = watch("inss_amount") || 0;
   const irrf = watch("irrf_amount") || 0;
+
+  // Auto-calculate INSS and IRRF when gross amount changes
+  useEffect(() => {
+    const gross = Number(amount);
+    if (gross > 0) {
+      const computedINSS = calcINSS(gross);
+      const computedIRRF = calcIRRF(gross, computedINSS);
+      setValue("inss_amount", computedINSS);
+      setValue("irrf_amount", computedIRRF);
+    }
+  }, [amount, setValue]);
 
   const netAmount = useMemo(() => Number(amount) - Number(inss) - Number(irrf), [amount, inss, irrf]);
 
