@@ -402,6 +402,59 @@ export type Database = {
           },
         ]
       }
+      employees: {
+        Row: {
+          company_id: string
+          cpf: string | null
+          created_at: string
+          department: string | null
+          hire_date: string
+          id: string
+          name: string
+          notes: string | null
+          position: string | null
+          salary: number
+          status: string
+          termination_date: string | null
+        }
+        Insert: {
+          company_id: string
+          cpf?: string | null
+          created_at?: string
+          department?: string | null
+          hire_date: string
+          id?: string
+          name: string
+          notes?: string | null
+          position?: string | null
+          salary?: number
+          status?: string
+          termination_date?: string | null
+        }
+        Update: {
+          company_id?: string
+          cpf?: string | null
+          created_at?: string
+          department?: string | null
+          hire_date?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          position?: string | null
+          salary?: number
+          status?: string
+          termination_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employees_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       expenses: {
         Row: {
           amount: number
@@ -472,6 +525,75 @@ export type Database = {
             columns: ["company_id"]
             isOneToOne: false
             referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payroll: {
+        Row: {
+          company_id: string
+          created_at: string
+          employee_id: string
+          fgts_amount: number
+          gross_salary: number
+          id: string
+          inss_amount: number
+          irrf_amount: number
+          net_salary: number
+          notes: string | null
+          other_additions: number
+          other_deductions: number
+          payment_date: string | null
+          reference_month: string
+          status: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          employee_id: string
+          fgts_amount?: number
+          gross_salary: number
+          id?: string
+          inss_amount?: number
+          irrf_amount?: number
+          net_salary: number
+          notes?: string | null
+          other_additions?: number
+          other_deductions?: number
+          payment_date?: string | null
+          reference_month: string
+          status?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          employee_id?: string
+          fgts_amount?: number
+          gross_salary?: number
+          id?: string
+          inss_amount?: number
+          irrf_amount?: number
+          net_salary?: number
+          notes?: string | null
+          other_additions?: number
+          other_deductions?: number
+          payment_date?: string | null
+          reference_month?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payroll_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payroll_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
             referencedColumns: ["id"]
           },
         ]
