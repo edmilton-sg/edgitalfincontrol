@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Repeat, Pencil } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import { FileAttachments } from "@/components/shared/FileAttachments";
 import type { Revenue, Attachment } from "@/data/mockData";
 import type { TranslationKey } from "@/i18n/translations";
@@ -38,7 +39,7 @@ export function RevenueDetailDialog({ revenue, open, onOpenChange, onEdit, attac
         </DialogHeader>
 
         <div className="space-y-3 text-sm">
-          <Row label={t("date")} value={new Date(revenue.date).toLocaleDateString(language)} />
+          <Row label={t("date")} value={formatDateString(revenue.date, language)} />
           <Row label={t("description")} value={revenue.description} />
           <Row label={t("client")} value={revenue.client} />
           <Row label={t("grossAmount")} value={formatCurrency(revenue.gross_amount, language)} />

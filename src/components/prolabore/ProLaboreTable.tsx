@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2, CheckCircle } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatMonthYear } from "@/lib/formatDate";
 
 export interface ProLaboreRow {
   id: string;
@@ -57,7 +58,7 @@ export function ProLaboreTable({ data, onView, onEdit, onDelete, onMarkAsPaid }:
             data.map((row) => (
               <TableRow key={row.id}>
                 <TableCell className="whitespace-nowrap">
-                  {new Date(row.reference_month + "T00:00:00").toLocaleDateString(language, { month: "long", year: "numeric" })}
+                  {formatMonthYear(row.reference_month, language)}
                 </TableCell>
                 <TableCell>{row.member_name}</TableCell>
                 <TableCell className="text-right">{formatCurrency(Number(row.amount), language)}</TableCell>

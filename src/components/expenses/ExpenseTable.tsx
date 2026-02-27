@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Check, X, Eye, Pencil, Trash2, Repeat, Link } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import type { Expense } from "@/data/mockData";
 import type { TranslationKey } from "@/i18n/translations";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -59,7 +60,7 @@ export function ExpenseTable({ data, onView, onEdit, onDelete }: ExpenseTablePro
               const isLinked = !!e.source_type;
               return (
                 <TableRow key={e.id}>
-                  <TableCell className="whitespace-nowrap">{new Date(e.date).toLocaleDateString(language)}</TableCell>
+                  <TableCell className="whitespace-nowrap">{formatDateString(e.date, language)}</TableCell>
                   <TableCell>
                     <span className="flex items-center gap-1">
                       {e.description}

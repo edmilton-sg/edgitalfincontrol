@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type EmployeeRow = Tables<"employees">;
@@ -46,7 +47,7 @@ export function EmployeeTable({ data, onView, onEdit, onDelete }: Props) {
                 <TableCell>{emp.position || "—"}</TableCell>
                 <TableCell>{emp.department || "—"}</TableCell>
                 <TableCell className="text-right">{formatCurrency(emp.salary, language)}</TableCell>
-                <TableCell>{emp.hire_date.split("-").reverse().join("/")}</TableCell>
+                <TableCell>{formatDateString(emp.hire_date, language)}</TableCell>
                 <TableCell>
                   <Badge variant={emp.status === "active" ? "default" : "secondary"}>
                     {t(emp.status === "active" ? "employeeActive" : "employeeTerminated")}

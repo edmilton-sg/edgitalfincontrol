@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Eye, Pencil, Trash2, Repeat } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import type { Revenue } from "@/data/mockData";
 import type { TranslationKey } from "@/i18n/translations";
 
@@ -48,7 +49,7 @@ export function RevenueTable({ data, onView, onEdit, onDelete }: RevenueTablePro
           ) : (
             data.map((r) => (
               <TableRow key={r.id}>
-                <TableCell className="whitespace-nowrap">{new Date(r.date).toLocaleDateString(language)}</TableCell>
+                <TableCell className="whitespace-nowrap">{formatDateString(r.date, language)}</TableCell>
                 <TableCell>
                   <span className="flex items-center gap-1">
                     {r.description}

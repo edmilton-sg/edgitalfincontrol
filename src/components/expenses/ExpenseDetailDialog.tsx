@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Repeat, Pencil, Check, X } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatDateString } from "@/lib/formatDate";
 import { FileAttachments } from "@/components/shared/FileAttachments";
 import type { Expense, Attachment } from "@/data/mockData";
 import type { TranslationKey } from "@/i18n/translations";
@@ -32,7 +33,7 @@ export function ExpenseDetailDialog({ expense, open, onOpenChange, onEdit, attac
         </DialogHeader>
 
         <div className="space-y-3 text-sm">
-          <Row label={t("date")} value={new Date(expense.date).toLocaleDateString(language)} />
+          <Row label={t("date")} value={formatDateString(expense.date, language)} />
           <Row label={t("description")} value={expense.description} />
           <Row label={t("category")} value={t(expense.category as TranslationKey)} />
           <Row label={t("costCenter")} value={expense.cost_center} />

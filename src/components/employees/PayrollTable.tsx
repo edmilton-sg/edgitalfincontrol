@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Check, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
+import { formatMonthYear } from "@/lib/formatDate";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type PayrollRow = Tables<"payroll">;
@@ -40,7 +41,7 @@ export function PayrollTable({ data, onMarkPaid, onDelete }: Props) {
           ) : (
             data.map((p) => (
               <TableRow key={p.id}>
-                <TableCell>{new Date(p.reference_month).toLocaleDateString(language, { month: "long", year: "numeric" })}</TableCell>
+                <TableCell>{formatMonthYear(p.reference_month, language)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(p.gross_salary, language)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(p.inss_amount, language)}</TableCell>
                 <TableCell className="text-right">{formatCurrency(p.irrf_amount, language)}</TableCell>
