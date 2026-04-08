@@ -404,10 +404,12 @@ export type Database = {
       }
       employees: {
         Row: {
+          cnpj: string | null
           company_id: string
           cpf: string | null
           created_at: string
           department: string | null
+          employment_type: string
           hire_date: string
           id: string
           name: string
@@ -418,10 +420,12 @@ export type Database = {
           termination_date: string | null
         }
         Insert: {
+          cnpj?: string | null
           company_id: string
           cpf?: string | null
           created_at?: string
           department?: string | null
+          employment_type?: string
           hire_date: string
           id?: string
           name: string
@@ -432,10 +436,12 @@ export type Database = {
           termination_date?: string | null
         }
         Update: {
+          cnpj?: string | null
           company_id?: string
           cpf?: string | null
           created_at?: string
           department?: string | null
+          employment_type?: string
           hire_date?: string
           id?: string
           name?: string
