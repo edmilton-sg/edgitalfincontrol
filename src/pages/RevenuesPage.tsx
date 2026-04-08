@@ -186,6 +186,14 @@ export default function RevenuesPage() {
     setFormOpen(true);
   }
 
+  async function handleDeleteRevenue(revenue: Revenue) {
+    const atts = await loadAttachments(String(revenue.id));
+    setDeleteDetails(
+      t("deleteRevenueDetails").replace("{attachments}", String(atts.length))
+    );
+    setDeletingRevenue(revenue);
+  }
+
   if (!selectedCompanyId) {
     return <div className="text-center text-muted-foreground py-12">{t("selectCompanyFirst")}</div>;
   }
