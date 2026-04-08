@@ -1,37 +1,53 @@
 
 
-## Corrigir visualização de anexos e adicionar detalhes de pagamento
+## Limpar anexos ao deletar pagamento da folha
 
 ### Problema
-Os anexos da folha são salvos com `record_type: 'payroll'`, mas ao visualizar a despesa vinculada, o sistema busca `record_type: 'expense'` — não encontra nada. Além disso, não existe dialog de detalhes da folha de pagamento.
+Ao deletar um registro de payroll, apenas a despesa vinculada e o registro da folha são removidos. Os anexos (tabela `attachments` e arquivos no bucket `attachments`) permanecem no sistema, acumulando lixo.
 
-### Alterações
+### Solução
+Atualizar o `deletePayrollMutation` em `src/pages/EmployeesPage.tsx` para:
 
-**1. FileAttachments — adicionar suporte a `payroll`**
-- `src/components/shared/FileAttachments.tsx`: Adicionar `"payroll"` ao union type de `recordType`
+1. Buscar todos os anexos com `record_type: 'payroll'` e `record_id: payroll.id`
+2. Remover os arquivos físicos do Storage (`supabase.storage.from('attachments').remove([...paths])`)
+3. Deletar os registros da tabela `attachments`
+4. Depois deletar a despesa vinculada e o registro de payroll (como já faz)
 
-**2. ExpensesPage — buscar anexos do payroll para despesas vinculadas**
-- `src/pages/ExpensesPage.tsx`: Na função `loadAttachments`, quando a despesa tiver `source_type === 'payroll'`, buscar anexos com `record_id: source_id` e `record_type: 'payroll'` em vez de `record_type: 'expense'`
+### Alteração
 
-**3. Novo componente `PayrollDetailDialog`**
-- Criar `src/components/employees/PayrollDetailDialog.tsx`
-- Exibir dados da folha: mês referência, bruto, INSS, IRRF, FGTS, líquido, status, data pagamento
-- Exibir nome do funcionário
-- Incluir `FileAttachments` com `recordType: 'payroll'` e `readOnly` para mostrar os comprovantes anexados
+**`src/pages/EmployeesPage.tsx`** — `deletePayrollMutation.mutationFn`:
 
-**4. PayrollTable — adicionar botão de visualizar detalhes**
-- Adicionar ícone `Eye` nas ações de cada linha
-- Adicionar prop `onView` ao componente
+```typescript
+mutationFn: async (p: PayrollRow) => {
+  // 1. Fetch attachments linked to this payroll
+  const { data: atts } = await supabase
+    .from("attachments")
+    .select("id, file_path")
+    .eq("record_type", "payroll")
+    .eq("record_id", p.id);
 
-**5. EmployeesPage — integrar o dialog de detalhes**
-- Adicionar state para `viewPayroll`
-- Buscar anexos ao abrir o detalhe
-- Renderizar `PayrollDetailDialog`
+  // 2. Remove files from storage
+  if (atts?.length) {
+    await supabase.storage
+      .from("attachments")
+      .remove(atts.map(a => a.file_path));
+    // 3. Delete attachment records
+    await supabase.from("attachments")
+      .delete()
+      .eq("record_type", "payroll")
+      .eq("record_id", p.id);
+  }
 
-**6. Traduções**
-- Adicionar chaves: `payrollDetails`, `noAttachments` (se não existir), `paymentDate`
+  // 4. Delete linked expense
+  await supabase.from("expenses").delete()
+    .eq("source_type", "payroll").eq("source_id", p.id);
 
-### Fluxo corrigido
-- **Folha de pagamento**: clica no ícone de olho → abre `PayrollDetailDialog` com dados + anexos (`record_type: 'payroll'`)
-- **Despesas**: ao ver detalhe de despesa vinculada a payroll → busca anexos via `source_id` com `record_type: 'payroll'`
+  // 5. Delete payroll record
+  const { error } = await supabase.from("payroll")
+    .delete().eq("id", p.id);
+  if (error) throw error;
+}
+```
+
+Apenas um arquivo alterado, sem mudanças no banco de dados.
 
