@@ -383,6 +383,8 @@ export const translations = {
     boleto: "Boleto (opcional)",
     saving: "Salvando...",
     confirm: "Confirmar",
+    payrollDetails: "Detalhes da Folha",
+    employee: "Funcionário",
   },
   en: {
     dashboard: "Dashboard",
