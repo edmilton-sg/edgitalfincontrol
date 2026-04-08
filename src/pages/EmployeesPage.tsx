@@ -336,6 +336,7 @@ export default function EmployeesPage() {
         open={!!deleteItem}
         onOpenChange={(o) => !o && setDeleteItem(null)}
         onConfirm={() => { if (deleteItem) deleteMutation.mutate(deleteItem.id); setDeleteItem(null); }}
+        details={deleteEmployeeDetails}
       />
 
       <DeleteConfirmDialog
