@@ -744,6 +744,13 @@ export const translations = {
     clt: "CLT",
     pj: "PJ",
     employeeCnpj: "CNPJ",
+    paymentConfirmation: "Payment Confirmation",
+    paymentConfirmationDesc: "Enter the date and attach the required documents.",
+    invoiceFile: "Invoice",
+    paymentProofFile: "Payment Proof",
+    boleto: "Boleto (optional)",
+    selectFile: "Select file",
+    selectDate: "Select date",
   },
 } as const;
 
