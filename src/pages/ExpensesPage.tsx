@@ -223,7 +223,7 @@ export default function ExpensesPage() {
         data={filtered}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={setDeletingExpense}
+        onDelete={handleDeleteExpense}
       />
 
       <ExpenseForm
