@@ -367,6 +367,7 @@ export type Database = {
           id: string
           last_digits: string | null
           name: string
+          status: string
         }
         Insert: {
           brand?: string
@@ -379,6 +380,7 @@ export type Database = {
           id?: string
           last_digits?: string | null
           name: string
+          status?: string
         }
         Update: {
           brand?: string
@@ -391,6 +393,7 @@ export type Database = {
           id?: string
           last_digits?: string | null
           name?: string
+          status?: string
         }
         Relationships: [
           {
