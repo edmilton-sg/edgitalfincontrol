@@ -26,6 +26,7 @@ export default function RevenuesPage() {
   const [editingRevenue, setEditingRevenue] = useState<Revenue | null>(null);
   const [viewingRevenue, setViewingRevenue] = useState<Revenue | null>(null);
   const [deletingRevenue, setDeletingRevenue] = useState<Revenue | null>(null);
+  const [deleteDetails, setDeleteDetails] = useState("");
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([]);
   const [viewAttachments, setViewAttachments] = useState<Attachment[]>([]);
 
