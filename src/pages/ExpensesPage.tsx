@@ -250,6 +250,7 @@ export default function ExpensesPage() {
         onOpenChange={(open) => !open && setDeletingExpense(null)}
         onConfirm={() => deletingExpense && deleteExpense.mutate(deletingExpense)}
         loading={deleteExpense.isPending}
+        details={deleteDetails}
       />
     </div>
   );
