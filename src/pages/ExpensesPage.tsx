@@ -62,12 +62,15 @@ export default function ExpensesPage() {
     enabled: !!selectedCompanyId,
   });
 
-  async function loadAttachments(recordId: string) {
+  async function loadAttachments(expense: Expense) {
+    const isPayroll = expense.source_type === "payroll" && expense.source_id;
+    const recordType = isPayroll ? "payroll" : "expense";
+    const recordId = isPayroll ? expense.source_id! : String(expense.id);
     const { data } = await supabase
       .from("attachments")
       .select("*")
       .eq("record_id", recordId)
-      .eq("record_type", "expense");
+      .eq("record_type", recordType);
     return (data || []) as unknown as Attachment[];
   }
 

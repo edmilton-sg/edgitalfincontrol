@@ -328,6 +328,15 @@ export default function EmployeesPage() {
         onConfirm={handlePaymentConfirm}
         loading={paymentLoading}
       />
+
+      <PayrollDetailDialog
+        open={!!viewPayroll}
+        onOpenChange={(o) => !o && setViewPayroll(null)}
+        payroll={viewPayroll}
+        employeeName={employees.find((e) => e.id === viewPayroll?.employee_id)?.name}
+        attachments={viewPayrollAttachments}
+        companyId={selectedCompanyId!}
+      />
     </div>
   );
 }
