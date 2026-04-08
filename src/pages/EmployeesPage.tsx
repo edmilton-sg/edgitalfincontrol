@@ -276,6 +276,15 @@ export default function EmployeesPage() {
             data={filteredPayroll}
             onMarkPaid={(p) => setPaymentPayroll(p)}
             onDelete={setDeletePayroll}
+            onView={async (p) => {
+              const { data } = await supabase
+                .from("attachments")
+                .select("*")
+                .eq("record_id", p.id)
+                .eq("record_type", "payroll");
+              setViewPayrollAttachments((data || []) as unknown as Attachment[]);
+              setViewPayroll(p);
+            }}
           />
         </TabsContent>
       </Tabs>
