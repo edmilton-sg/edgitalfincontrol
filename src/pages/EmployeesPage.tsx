@@ -270,7 +270,7 @@ export default function EmployeesPage() {
 
           <PayrollTable
             data={filteredPayroll}
-            onMarkPaid={(p) => markPaidMutation.mutate(p)}
+            onMarkPaid={(p) => setPaymentPayroll(p)}
             onDelete={setDeletePayroll}
           />
         </TabsContent>
