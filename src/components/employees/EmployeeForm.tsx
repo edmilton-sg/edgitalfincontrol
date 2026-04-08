@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useLanguage } from "@/i18n/LanguageContext";
 import type { EmployeeRow } from "./EmployeeTable";
 
@@ -17,7 +18,7 @@ interface Props {
 
 export function EmployeeForm({ open, onOpenChange, onSubmit, editItem }: Props) {
   const { t } = useLanguage();
-  const { register, handleSubmit, reset } = useForm<{
+  const { register, handleSubmit, reset, watch, setValue } = useForm<{
     name: string;
     cpf: string;
     position: string;
@@ -25,7 +26,11 @@ export function EmployeeForm({ open, onOpenChange, onSubmit, editItem }: Props) 
     salary: number;
     hire_date: string;
     notes: string;
+    employment_type: string;
+    cnpj: string;
   }>();
+
+  const employmentType = watch("employment_type") || "clt";
 
   useEffect(() => {
     if (editItem) {
@@ -37,14 +42,20 @@ export function EmployeeForm({ open, onOpenChange, onSubmit, editItem }: Props) 
         salary: editItem.salary,
         hire_date: editItem.hire_date,
         notes: editItem.notes || "",
+        employment_type: (editItem as any).employment_type || "clt",
+        cnpj: (editItem as any).cnpj || "",
       });
     } else {
-      reset({ name: "", cpf: "", position: "", department: "", salary: 0, hire_date: "", notes: "" });
+      reset({ name: "", cpf: "", position: "", department: "", salary: 0, hire_date: "", notes: "", employment_type: "clt", cnpj: "" });
     }
   }, [editItem, open, reset]);
 
   const handleFormSubmit = (data: any) => {
-    onSubmit({ ...data, salary: Number(data.salary) });
+    onSubmit({
+      ...data,
+      salary: Number(data.salary),
+      cnpj: data.employment_type === "pj" ? data.cnpj : null,
+    });
     onOpenChange(false);
   };
 
@@ -61,9 +72,27 @@ export function EmployeeForm({ open, onOpenChange, onSubmit, editItem }: Props) 
               <Input {...register("name", { required: true })} />
             </div>
             <div>
+              <Label>{t("employmentType")}</Label>
+              <Select value={employmentType} onValueChange={(v) => setValue("employment_type", v)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="clt">{t("clt")}</SelectItem>
+                  <SelectItem value="pj">{t("pj")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label>{t("cpf")}</Label>
               <Input {...register("cpf")} />
             </div>
+            {employmentType === "pj" && (
+              <div>
+                <Label>{t("employeeCnpj")}</Label>
+                <Input {...register("cnpj")} />
+              </div>
+            )}
             <div>
               <Label>{t("employeePosition")}</Label>
               <Input {...register("position")} />

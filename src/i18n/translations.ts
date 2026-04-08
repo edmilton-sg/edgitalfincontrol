@@ -372,6 +372,10 @@ export const translations = {
     payrollProcessed: "Folha processada!",
     payrollExpense: "Folha de Pagamento",
     managedByPayrollModule: "Gerenciado pelo módulo de Funcionários",
+    employmentType: "Regime",
+    clt: "CLT",
+    pj: "PJ",
+    employeeCnpj: "CNPJ",
   },
   en: {
     dashboard: "Dashboard",
@@ -729,6 +733,10 @@ export const translations = {
     payrollProcessed: "Payroll processed!",
     payrollExpense: "Payroll",
     managedByPayrollModule: "Managed by Employees module",
+    employmentType: "Employment Type",
+    clt: "CLT",
+    pj: "PJ",
+    employeeCnpj: "CNPJ",
   },
 } as const;
 
