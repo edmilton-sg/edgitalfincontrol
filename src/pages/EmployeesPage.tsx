@@ -29,6 +29,7 @@ export default function EmployeesPage() {
   const [editItem, setEditItem] = useState<EmployeeRow | null>(null);
   const [viewItem, setViewItem] = useState<EmployeeRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<EmployeeRow | null>(null);
+  const [deleteEmployeeDetails, setDeleteEmployeeDetails] = useState("");
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
   const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
