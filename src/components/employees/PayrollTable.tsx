@@ -55,6 +55,9 @@ export function PayrollTable({ data, onMarkPaid, onDelete, onView }: Props) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView?.(p)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {p.status === "pending" && (
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMarkPaid?.(p)}>
                         <Check className="h-4 w-4" />
