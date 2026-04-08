@@ -15,6 +15,7 @@ import { EmployeeForm } from "@/components/employees/EmployeeForm";
 import { EmployeeDetailDialog } from "@/components/employees/EmployeeDetailDialog";
 import { PayrollDialog } from "@/components/employees/PayrollDialog";
 import { PayrollTable, type PayrollRow } from "@/components/employees/PayrollTable";
+import { PayrollPaymentDialog } from "@/components/employees/PayrollPaymentDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 export default function EmployeesPage() {
