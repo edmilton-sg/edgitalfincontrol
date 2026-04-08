@@ -62,12 +62,15 @@ export default function ExpensesPage() {
     enabled: !!selectedCompanyId,
   });
 
-  async function loadAttachments(recordId: string) {
+  async function loadAttachments(expense: Expense) {
+    const isPayroll = expense.source_type === "payroll" && expense.source_id;
+    const recordType = isPayroll ? "payroll" : "expense";
+    const recordId = isPayroll ? expense.source_id! : String(expense.id);
     const { data } = await supabase
       .from("attachments")
       .select("*")
       .eq("record_id", recordId)
-      .eq("record_type", "expense");
+      .eq("record_type", recordType);
     return (data || []) as unknown as Attachment[];
   }
 
@@ -142,7 +145,7 @@ export default function ExpensesPage() {
 
   const deleteExpense = useMutation({
     mutationFn: async (expense: Expense) => {
-      const attachments = await loadAttachments(String(expense.id));
+      const attachments = await loadAttachments(expense);
       if (attachments.length > 0) {
         await supabase.storage.from("attachments").remove(attachments.map((a) => a.file_path));
         await supabase.from("attachments").delete().eq("record_id", String(expense.id)).eq("record_type", "expense");
@@ -177,13 +180,13 @@ export default function ExpensesPage() {
   };
 
   async function handleView(expense: Expense) {
-    const atts = await loadAttachments(String(expense.id));
+    const atts = await loadAttachments(expense);
     setViewAttachments(atts);
     setViewingExpense(expense);
   }
 
   async function handleEdit(expense: Expense) {
-    const atts = await loadAttachments(String(expense.id));
+    const atts = await loadAttachments(expense);
     setEditAttachments(atts);
     setEditingExpense(expense);
     setFormOpen(true);

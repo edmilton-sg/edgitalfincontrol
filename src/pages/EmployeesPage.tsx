@@ -16,7 +16,9 @@ import { EmployeeDetailDialog } from "@/components/employees/EmployeeDetailDialo
 import { PayrollDialog } from "@/components/employees/PayrollDialog";
 import { PayrollTable, type PayrollRow } from "@/components/employees/PayrollTable";
 import { PayrollPaymentDialog } from "@/components/employees/PayrollPaymentDialog";
+import { PayrollDetailDialog } from "@/components/employees/PayrollDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import type { Attachment } from "@/data/mockData";
 
 export default function EmployeesPage() {
   const { t } = useLanguage();
@@ -30,6 +32,8 @@ export default function EmployeesPage() {
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
   const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
+  const [viewPayroll, setViewPayroll] = useState<PayrollRow | null>(null);
+  const [viewPayrollAttachments, setViewPayrollAttachments] = useState<Attachment[]>([]);
   const [paymentLoading, setPaymentLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -272,6 +276,15 @@ export default function EmployeesPage() {
             data={filteredPayroll}
             onMarkPaid={(p) => setPaymentPayroll(p)}
             onDelete={setDeletePayroll}
+            onView={async (p) => {
+              const { data } = await supabase
+                .from("attachments")
+                .select("*")
+                .eq("record_id", p.id)
+                .eq("record_type", "payroll");
+              setViewPayrollAttachments((data || []) as unknown as Attachment[]);
+              setViewPayroll(p);
+            }}
           />
         </TabsContent>
       </Tabs>
@@ -314,6 +327,15 @@ export default function EmployeesPage() {
         payroll={paymentPayroll}
         onConfirm={handlePaymentConfirm}
         loading={paymentLoading}
+      />
+
+      <PayrollDetailDialog
+        open={!!viewPayroll}
+        onOpenChange={(o) => !o && setViewPayroll(null)}
+        payroll={viewPayroll}
+        employeeName={employees.find((e) => e.id === viewPayroll?.employee_id)?.name}
+        attachments={viewPayrollAttachments}
+        companyId={selectedCompanyId!}
       />
     </div>
   );

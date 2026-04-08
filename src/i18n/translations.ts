@@ -383,6 +383,8 @@ export const translations = {
     boleto: "Boleto (opcional)",
     saving: "Salvando...",
     confirm: "Confirmar",
+    payrollDetails: "Detalhes da Folha",
+    employee: "Funcionário",
   },
   en: {
     dashboard: "Dashboard",
@@ -751,6 +753,8 @@ export const translations = {
     boleto: "Boleto (optional)",
     saving: "Saving...",
     confirm: "Confirm",
+    payrollDetails: "Payroll Details",
+    employee: "Employee",
   },
 } as const;
 

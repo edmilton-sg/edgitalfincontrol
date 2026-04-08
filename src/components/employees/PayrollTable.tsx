@@ -1,7 +1,7 @@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, Trash2 } from "lucide-react";
+import { Check, Eye, Trash2 } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatMonthYear } from "@/lib/formatDate";
@@ -13,9 +13,10 @@ interface Props {
   data: PayrollRow[];
   onMarkPaid?: (p: PayrollRow) => void;
   onDelete?: (p: PayrollRow) => void;
+  onView?: (p: PayrollRow) => void;
 }
 
-export function PayrollTable({ data, onMarkPaid, onDelete }: Props) {
+export function PayrollTable({ data, onMarkPaid, onDelete, onView }: Props) {
   const { t, language } = useLanguage();
 
   return (
@@ -54,6 +55,9 @@ export function PayrollTable({ data, onMarkPaid, onDelete }: Props) {
                 </TableCell>
                 <TableCell>
                   <div className="flex items-center justify-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onView?.(p)}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
                     {p.status === "pending" && (
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => onMarkPaid?.(p)}>
                         <Check className="h-4 w-4" />
