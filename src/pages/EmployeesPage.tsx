@@ -195,8 +195,23 @@ export default function EmployeesPage() {
   // Delete payroll
   const deletePayrollMutation = useMutation({
     mutationFn: async (p: PayrollRow) => {
-      // Delete linked expense first
+      // 1. Fetch attachments linked to this payroll
+      const { data: atts } = await supabase
+        .from("attachments")
+        .select("id, file_path")
+        .eq("record_type", "payroll")
+        .eq("record_id", p.id);
+
+      // 2. Remove files from storage + delete attachment records
+      if (atts?.length) {
+        await supabase.storage.from("attachments").remove(atts.map(a => a.file_path));
+        await supabase.from("attachments").delete().eq("record_type", "payroll").eq("record_id", p.id);
+      }
+
+      // 3. Delete linked expense
       await supabase.from("expenses").delete().eq("source_type", "payroll").eq("source_id", p.id);
+
+      // 4. Delete payroll record
       const { error } = await supabase.from("payroll").delete().eq("id", p.id);
       if (error) throw error;
     },
