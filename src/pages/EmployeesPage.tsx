@@ -261,7 +261,10 @@ export default function EmployeesPage() {
             data={filtered}
             onView={setViewItem}
             onEdit={(e) => { setEditItem(e); setFormOpen(true); }}
-            onDelete={setDeleteItem}
+            onDelete={(e) => {
+              setDeleteEmployeeDetails(t("deleteEmployeeDetails"));
+              setDeleteItem(e);
+            }}
           />
         </TabsContent>
 
