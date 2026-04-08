@@ -749,8 +749,8 @@ export const translations = {
     invoiceFile: "Invoice",
     paymentProofFile: "Payment Proof",
     boleto: "Boleto (optional)",
-    selectFile: "Select file",
-    selectDate: "Select date",
+    saving: "Saving...",
+    confirm: "Confirm",
   },
 } as const;
 
