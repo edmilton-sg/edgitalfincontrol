@@ -295,7 +295,17 @@ export default function EmployeesPage() {
           <PayrollTable
             data={filteredPayroll}
             onMarkPaid={(p) => setPaymentPayroll(p)}
-            onDelete={setDeletePayroll}
+            onDelete={async (p) => {
+              const { count } = await supabase
+                .from("attachments")
+                .select("id", { count: "exact", head: true })
+                .eq("record_type", "payroll")
+                .eq("record_id", p.id);
+              setDeletePayrollDetails(
+                t("deletePayrollDetails").replace("{attachments}", String(count || 0))
+              );
+              setDeletePayroll(p);
+            }}
             onView={async (p) => {
               const { data } = await supabase
                 .from("attachments")
