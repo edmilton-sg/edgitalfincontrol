@@ -376,6 +376,13 @@ export const translations = {
     clt: "CLT",
     pj: "PJ",
     employeeCnpj: "CNPJ",
+    paymentConfirmation: "Confirmação de Pagamento",
+    paymentConfirmationDesc: "Informe a data e anexe os documentos obrigatórios.",
+    invoiceFile: "Nota Fiscal",
+    paymentProofFile: "Comprovante de Pagamento",
+    boleto: "Boleto (opcional)",
+    selectFile: "Selecionar arquivo",
+    selectDate: "Selecionar data",
   },
   en: {
     dashboard: "Dashboard",
