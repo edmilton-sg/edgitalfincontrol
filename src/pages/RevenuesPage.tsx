@@ -218,7 +218,7 @@ export default function RevenuesPage() {
         data={filtered}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={setDeletingRevenue}
+        onDelete={handleDeleteRevenue}
       />
 
       <RevenueForm
