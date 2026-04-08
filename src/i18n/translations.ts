@@ -773,6 +773,24 @@ export const translations = {
     confirm: "Confirm",
     payrollDetails: "Payroll Details",
     employee: "Employee",
+
+    // Archive & detailed delete
+    archiveCard: "Archive",
+    unarchiveCard: "Unarchive",
+    archivedCards: "Archived Cards",
+    archiveOrDelete: "Archive or Delete?",
+    archiveDescription: "Keep the card and its records as history, hidden from active cards.",
+    deleteAllDescription: "Permanently remove the card, all transactions, attachments and linked expenses.",
+    cardArchived: "Card archived!",
+    cardUnarchived: "Card reactivated!",
+    deleteCardDetails: "This card has {transactions} transaction(s), {attachments} attachment(s) and {expenses} linked expense(s).",
+    deleteTransactionDetails: "The transaction, {attachments} attachment(s) and linked expense will be removed.",
+    deletePayrollDetails: "The payment, {attachments} attachment(s) and linked expense will be removed.",
+    deleteProLaboreDetails: "The record, {attachments} attachment(s) and linked expense will be removed.",
+    deleteRevenueDetails: "The revenue and {attachments} attachment(s) will be permanently removed.",
+    deleteExpenseDetails: "The expense and {attachments} attachment(s) will be permanently removed.",
+    deleteEmployeeDetails: "The employee and all linked payroll records will be removed.",
+    deletePermanently: "Delete Permanently",
   },
 } as const;
 
