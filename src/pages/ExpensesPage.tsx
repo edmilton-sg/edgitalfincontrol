@@ -180,7 +180,7 @@ export default function ExpensesPage() {
   };
 
   async function handleView(expense: Expense) {
-    const atts = await loadAttachments(String(expense.id));
+    const atts = await loadAttachments(expense);
     setViewAttachments(atts);
     setViewingExpense(expense);
   }
