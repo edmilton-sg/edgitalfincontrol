@@ -381,8 +381,8 @@ export const translations = {
     invoiceFile: "Nota Fiscal",
     paymentProofFile: "Comprovante de Pagamento",
     boleto: "Boleto (opcional)",
-    selectFile: "Selecionar arquivo",
-    selectDate: "Selecionar data",
+    saving: "Salvando...",
+    confirm: "Confirmar",
   },
   en: {
     dashboard: "Dashboard",
