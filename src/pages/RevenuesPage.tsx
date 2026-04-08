@@ -26,6 +26,7 @@ export default function RevenuesPage() {
   const [editingRevenue, setEditingRevenue] = useState<Revenue | null>(null);
   const [viewingRevenue, setViewingRevenue] = useState<Revenue | null>(null);
   const [deletingRevenue, setDeletingRevenue] = useState<Revenue | null>(null);
+  const [deleteDetails, setDeleteDetails] = useState("");
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([]);
   const [viewAttachments, setViewAttachments] = useState<Attachment[]>([]);
 
@@ -185,6 +186,14 @@ export default function RevenuesPage() {
     setFormOpen(true);
   }
 
+  async function handleDeleteRevenue(revenue: Revenue) {
+    const atts = await loadAttachments(String(revenue.id));
+    setDeleteDetails(
+      t("deleteRevenueDetails").replace("{attachments}", String(atts.length))
+    );
+    setDeletingRevenue(revenue);
+  }
+
   if (!selectedCompanyId) {
     return <div className="text-center text-muted-foreground py-12">{t("selectCompanyFirst")}</div>;
   }
@@ -209,7 +218,7 @@ export default function RevenuesPage() {
         data={filtered}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={setDeletingRevenue}
+        onDelete={handleDeleteRevenue}
       />
 
       <RevenueForm
@@ -236,6 +245,7 @@ export default function RevenuesPage() {
         onOpenChange={(open) => !open && setDeletingRevenue(null)}
         onConfirm={() => deletingRevenue && deleteRevenue.mutate(deletingRevenue)}
         loading={deleteRevenue.isPending}
+        details={deleteDetails}
       />
     </div>
   );

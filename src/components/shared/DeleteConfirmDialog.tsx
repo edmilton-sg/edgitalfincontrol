@@ -15,9 +15,10 @@ interface DeleteConfirmDialogProps {
   onOpenChange: (open: boolean) => void;
   onConfirm: () => void;
   loading?: boolean;
+  details?: string;
 }
 
-export function DeleteConfirmDialog({ open, onOpenChange, onConfirm, loading }: DeleteConfirmDialogProps) {
+export function DeleteConfirmDialog({ open, onOpenChange, onConfirm, loading, details }: DeleteConfirmDialogProps) {
   const { t } = useLanguage();
 
   return (
@@ -27,6 +28,11 @@ export function DeleteConfirmDialog({ open, onOpenChange, onConfirm, loading }: 
           <AlertDialogTitle>{t("confirmDelete")}</AlertDialogTitle>
           <AlertDialogDescription>
             {t("confirmDeleteMessage")} {t("cannotBeUndone")}
+            {details && (
+              <span className="block mt-2 text-sm font-medium text-foreground/80">
+                {details}
+              </span>
+            )}
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>

@@ -26,6 +26,7 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [deleteDetails, setDeleteDetails] = useState("");
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([]);
   const [viewAttachments, setViewAttachments] = useState<Attachment[]>([]);
 
@@ -198,6 +199,14 @@ export default function ExpensesPage() {
     setFormOpen(true);
   }
 
+  async function handleDeleteExpense(expense: Expense) {
+    const atts = await loadAttachments(expense);
+    setDeleteDetails(
+      t("deleteExpenseDetails").replace("{attachments}", String(atts.length))
+    );
+    setDeletingExpense(expense);
+  }
+
   if (!selectedCompanyId) {
     return <div className="text-center text-muted-foreground py-12">{t("selectCompanyFirst")}</div>;
   }
@@ -222,7 +231,7 @@ export default function ExpensesPage() {
         data={filtered}
         onView={handleView}
         onEdit={handleEdit}
-        onDelete={setDeletingExpense}
+        onDelete={handleDeleteExpense}
       />
 
       <ExpenseForm
@@ -249,6 +258,7 @@ export default function ExpensesPage() {
         onOpenChange={(open) => !open && setDeletingExpense(null)}
         onConfirm={() => deletingExpense && deleteExpense.mutate(deletingExpense)}
         loading={deleteExpense.isPending}
+        details={deleteDetails}
       />
     </div>
   );

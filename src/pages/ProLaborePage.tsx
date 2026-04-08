@@ -24,6 +24,7 @@ export default function ProLaborePage() {
   const [editing, setEditing] = useState<ProLaboreRow | null>(null);
   const [viewing, setViewing] = useState<ProLaboreRow | null>(null);
   const [deleting, setDeleting] = useState<ProLaboreRow | null>(null);
+  const [deleteDetails, setDeleteDetails] = useState("");
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
@@ -53,9 +54,7 @@ export default function ProLaborePage() {
 
   const upsertMutation = useMutation({
     mutationFn: async (data: Partial<ProLaboreRow>) => {
-      // Convert month input (YYYY-MM) to date (YYYY-MM-01)
       const refMonth = data.reference_month?.length === 7 ? data.reference_month + "-01" : data.reference_month;
-
       const payload = {
         company_id: selectedCompanyId!,
         member_name: data.member_name!,
@@ -67,7 +66,6 @@ export default function ProLaborePage() {
         reference_month: refMonth!,
         notes: data.notes || null,
       };
-
       if (data.id) {
         const { error } = await supabase.from("pro_labore").update(payload).eq("id", data.id);
         if (error) throw error;
@@ -85,14 +83,11 @@ export default function ProLaborePage() {
   const markAsPaidMutation = useMutation({
     mutationFn: async (row: ProLaboreRow) => {
       const today = format(new Date(), "yyyy-MM-dd");
-      // Update pro_labore status
       const { error: updateError } = await supabase
         .from("pro_labore")
         .update({ status: "paid", payment_date: today })
         .eq("id", row.id);
       if (updateError) throw updateError;
-
-      // Create linked expense
       const { error: expError } = await supabase.from("expenses").insert({
         company_id: row.company_id,
         description: `${t("proLaboreExpense")} - ${row.member_name}`,
@@ -115,8 +110,23 @@ export default function ProLaborePage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (row: ProLaboreRow) => {
-      // Delete linked expense first
+      // 1. Fetch attachments
+      const { data: atts } = await supabase
+        .from("attachments")
+        .select("file_path")
+        .eq("record_type", "pro_labore")
+        .eq("record_id", row.id);
+
+      // 2. Remove files from storage + delete records
+      if (atts?.length) {
+        await supabase.storage.from("attachments").remove(atts.map(a => a.file_path));
+        await supabase.from("attachments").delete().eq("record_type", "pro_labore").eq("record_id", row.id);
+      }
+
+      // 3. Delete linked expense
       await supabase.from("expenses").delete().eq("source_type", "pro_labore").eq("source_id", row.id);
+
+      // 4. Delete pro_labore record
       const { error } = await supabase.from("pro_labore").delete().eq("id", row.id);
       if (error) throw error;
     },
@@ -126,6 +136,18 @@ export default function ProLaborePage() {
       toast({ title: t("delete"), description: "✓" });
     },
   });
+
+  async function handleDeleteClick(row: ProLaboreRow) {
+    const { count } = await supabase
+      .from("attachments")
+      .select("id", { count: "exact", head: true })
+      .eq("record_type", "pro_labore")
+      .eq("record_id", row.id);
+    setDeleteDetails(
+      t("deleteProLaboreDetails").replace("{attachments}", String(count || 0))
+    );
+    setDeleting(row);
+  }
 
   return (
     <div className="space-y-6">
@@ -157,7 +179,7 @@ export default function ProLaborePage() {
         data={filtered}
         onView={(r) => setViewing(r)}
         onEdit={(r) => { setEditing(r); setFormOpen(true); }}
-        onDelete={(r) => setDeleting(r)}
+        onDelete={handleDeleteClick}
         onMarkAsPaid={(r) => markAsPaidMutation.mutate(r)}
       />
 
@@ -178,6 +200,7 @@ export default function ProLaborePage() {
         open={!!deleting}
         onOpenChange={() => setDeleting(null)}
         onConfirm={() => { if (deleting) deleteMutation.mutate(deleting); setDeleting(null); }}
+        details={deleteDetails}
       />
     </div>
   );

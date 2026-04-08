@@ -37,10 +37,10 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTx, setEditingTx] = useState<string | null>(null);
   const [deletingTxId, setDeletingTxId] = useState<string | null>(null);
+  const [deleteTxDetails, setDeleteTxDetails] = useState("");
   const [form, setForm] = useState<TransactionForm>(emptyForm);
   const [importOpen, setImportOpen] = useState(false);
 
-  // Fetch card name for expense description
   const { data: cardData } = useQuery({
     queryKey: ["credit_card_name", cardId],
     queryFn: async () => {
@@ -76,7 +76,6 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
       }).select("id").single();
       if (error) throw error;
 
-      // Create linked expense
       if (inserted) {
         const cardName = cardData?.name || "Cartão";
         await supabase.from("expenses").insert({
@@ -116,7 +115,6 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
       }).eq("id", editingTx);
       if (error) throw error;
 
-      // Update linked expense
       const cardName = cardData?.name || "Cartão";
       await (supabase.from("expenses") as any).update({
         date: form.date,
@@ -139,11 +137,24 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
 
   const deleteTx = useMutation({
     mutationFn: async (id: string) => {
-      // Delete linked expense first
+      // 1. Fetch attachments
+      const { data: atts } = await supabase
+        .from("attachments")
+        .select("file_path")
+        .eq("record_id", id);
+
+      // 2. Remove files from storage
+      if (atts?.length) {
+        await supabase.storage.from("attachments").remove(atts.map(a => a.file_path));
+        await supabase.from("attachments").delete().eq("record_id", id);
+      }
+
+      // 3. Delete linked expense
       await (supabase.from("expenses") as any).delete()
         .eq("source_type", "card_transaction")
         .eq("source_id", id);
 
+      // 4. Delete transaction
       const { error } = await supabase.from("card_transactions").delete().eq("id", id);
       if (error) throw error;
     },
@@ -154,6 +165,17 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
       toast({ title: t("transactionDeleted") });
     },
   });
+
+  async function handleDeleteClick(txId: string) {
+    const { count } = await supabase
+      .from("attachments")
+      .select("id", { count: "exact", head: true })
+      .eq("record_id", txId);
+    setDeleteTxDetails(
+      t("deleteTransactionDetails").replace("{attachments}", String(count || 0))
+    );
+    setDeletingTxId(txId);
+  }
 
   function openNew() {
     setEditingTx(null);
@@ -239,7 +261,7 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(tx)}>
                         <Pencil className="h-3.5 w-3.5" />
                       </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => setDeletingTxId(tx.id)}>
+                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => handleDeleteClick(tx.id)}>
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
                     </div>
@@ -314,6 +336,7 @@ export function CardTransactions({ cardId, companyId }: CardTransactionsProps) {
         onOpenChange={(o) => { if (!o) setDeletingTxId(null); }}
         onConfirm={() => deletingTxId && deleteTx.mutate(deletingTxId)}
         loading={deleteTx.isPending}
+        details={deleteTxDetails}
       />
     </Card>
   );

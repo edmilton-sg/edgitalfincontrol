@@ -29,8 +29,10 @@ export default function EmployeesPage() {
   const [editItem, setEditItem] = useState<EmployeeRow | null>(null);
   const [viewItem, setViewItem] = useState<EmployeeRow | null>(null);
   const [deleteItem, setDeleteItem] = useState<EmployeeRow | null>(null);
+  const [deleteEmployeeDetails, setDeleteEmployeeDetails] = useState("");
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
+  const [deletePayrollDetails, setDeletePayrollDetails] = useState("");
   const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
   const [viewPayroll, setViewPayroll] = useState<PayrollRow | null>(null);
   const [viewPayrollAttachments, setViewPayrollAttachments] = useState<Attachment[]>([]);
@@ -259,7 +261,10 @@ export default function EmployeesPage() {
             data={filtered}
             onView={setViewItem}
             onEdit={(e) => { setEditItem(e); setFormOpen(true); }}
-            onDelete={setDeleteItem}
+            onDelete={(e) => {
+              setDeleteEmployeeDetails(t("deleteEmployeeDetails"));
+              setDeleteItem(e);
+            }}
           />
         </TabsContent>
 
@@ -290,7 +295,17 @@ export default function EmployeesPage() {
           <PayrollTable
             data={filteredPayroll}
             onMarkPaid={(p) => setPaymentPayroll(p)}
-            onDelete={setDeletePayroll}
+            onDelete={async (p) => {
+              const { count } = await supabase
+                .from("attachments")
+                .select("id", { count: "exact", head: true })
+                .eq("record_type", "payroll")
+                .eq("record_id", p.id);
+              setDeletePayrollDetails(
+                t("deletePayrollDetails").replace("{attachments}", String(count || 0))
+              );
+              setDeletePayroll(p);
+            }}
             onView={async (p) => {
               const { data } = await supabase
                 .from("attachments")
@@ -321,12 +336,14 @@ export default function EmployeesPage() {
         open={!!deleteItem}
         onOpenChange={(o) => !o && setDeleteItem(null)}
         onConfirm={() => { if (deleteItem) deleteMutation.mutate(deleteItem.id); setDeleteItem(null); }}
+        details={deleteEmployeeDetails}
       />
 
       <DeleteConfirmDialog
         open={!!deletePayroll}
         onOpenChange={(o) => !o && setDeletePayroll(null)}
         onConfirm={() => { if (deletePayroll) deletePayrollMutation.mutate(deletePayroll); setDeletePayroll(null); }}
+        details={deletePayrollDetails}
       />
 
       <PayrollDialog

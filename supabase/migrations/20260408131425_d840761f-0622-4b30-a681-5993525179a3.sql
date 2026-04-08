@@ -1,0 +1,1 @@
+ALTER TABLE public.credit_cards ADD COLUMN status text NOT NULL DEFAULT 'active';
