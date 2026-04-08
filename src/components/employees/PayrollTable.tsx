@@ -16,7 +16,7 @@ interface Props {
   onView?: (p: PayrollRow) => void;
 }
 
-export function PayrollTable({ data, onMarkPaid, onDelete }: Props) {
+export function PayrollTable({ data, onMarkPaid, onDelete, onView }: Props) {
   const { t, language } = useLanguage();
 
   return (
