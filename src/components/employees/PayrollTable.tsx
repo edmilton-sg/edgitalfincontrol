@@ -13,6 +13,7 @@ interface Props {
   data: PayrollRow[];
   onMarkPaid?: (p: PayrollRow) => void;
   onDelete?: (p: PayrollRow) => void;
+  onView?: (p: PayrollRow) => void;
 }
 
 export function PayrollTable({ data, onMarkPaid, onDelete }: Props) {
