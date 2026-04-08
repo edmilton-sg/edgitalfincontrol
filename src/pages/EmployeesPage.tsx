@@ -32,6 +32,7 @@ export default function EmployeesPage() {
   const [deleteEmployeeDetails, setDeleteEmployeeDetails] = useState("");
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
+  const [deletePayrollDetails, setDeletePayrollDetails] = useState("");
   const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
   const [viewPayroll, setViewPayroll] = useState<PayrollRow | null>(null);
   const [viewPayrollAttachments, setViewPayrollAttachments] = useState<Attachment[]>([]);
