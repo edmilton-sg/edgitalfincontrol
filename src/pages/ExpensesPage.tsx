@@ -26,6 +26,7 @@ export default function ExpensesPage() {
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [viewingExpense, setViewingExpense] = useState<Expense | null>(null);
   const [deletingExpense, setDeletingExpense] = useState<Expense | null>(null);
+  const [deleteDetails, setDeleteDetails] = useState("");
   const [editAttachments, setEditAttachments] = useState<Attachment[]>([]);
   const [viewAttachments, setViewAttachments] = useState<Attachment[]>([]);
 
