@@ -83,7 +83,7 @@ export function PayrollPaymentDialog({
                   className={cn("w-full justify-start text-left font-normal", !paymentDate && "text-muted-foreground")}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {paymentDate ? format(paymentDate, "dd/MM/yyyy") : t("selectDate")}
+                  {paymentDate ? format(paymentDate, "dd/MM/yyyy") : t("selectFile")}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
