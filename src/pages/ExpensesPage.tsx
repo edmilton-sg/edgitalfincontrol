@@ -199,6 +199,14 @@ export default function ExpensesPage() {
     setFormOpen(true);
   }
 
+  async function handleDeleteExpense(expense: Expense) {
+    const atts = await loadAttachments(expense);
+    setDeleteDetails(
+      t("deleteExpenseDetails").replace("{attachments}", String(atts.length))
+    );
+    setDeletingExpense(expense);
+  }
+
   if (!selectedCompanyId) {
     return <div className="text-center text-muted-foreground py-12">{t("selectCompanyFirst")}</div>;
   }
