@@ -16,7 +16,9 @@ import { EmployeeDetailDialog } from "@/components/employees/EmployeeDetailDialo
 import { PayrollDialog } from "@/components/employees/PayrollDialog";
 import { PayrollTable, type PayrollRow } from "@/components/employees/PayrollTable";
 import { PayrollPaymentDialog } from "@/components/employees/PayrollPaymentDialog";
+import { PayrollDetailDialog } from "@/components/employees/PayrollDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import type { Attachment } from "@/data/mockData";
 
 export default function EmployeesPage() {
   const { t } = useLanguage();
