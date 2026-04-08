@@ -29,6 +29,8 @@ export default function EmployeesPage() {
   const [deleteItem, setDeleteItem] = useState<EmployeeRow | null>(null);
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
+  const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
