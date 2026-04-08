@@ -307,6 +307,14 @@ export default function EmployeesPage() {
         employee={payrollEmployee}
         onSubmit={(data) => payrollMutation.mutate(data)}
       />
+
+      <PayrollPaymentDialog
+        open={!!paymentPayroll}
+        onOpenChange={(o) => !o && setPaymentPayroll(null)}
+        payroll={paymentPayroll}
+        onConfirm={handlePaymentConfirm}
+        loading={paymentLoading}
+      />
     </div>
   );
 }
