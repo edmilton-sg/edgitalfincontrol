@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { formatCurrency } from "@/lib/formatCurrency";
 import { formatDateString } from "@/lib/formatDate";
@@ -14,20 +15,34 @@ export function EmployeeDetailDialog({ open, onOpenChange, item }: Props) {
   const { t, language } = useLanguage();
   if (!item) return null;
 
-  const rows = [
+  const empType = (item as any).employment_type || "clt";
+
+  const rows: { label: string; value: React.ReactNode }[] = [
     { label: t("employeeName"), value: item.name },
+    {
+      label: t("employmentType"),
+      value: <Badge variant={empType === "pj" ? "outline" : "default"}>{t(empType === "pj" ? "pj" : "clt")}</Badge>,
+    },
     { label: t("cpf"), value: item.cpf || "—" },
+  ];
+
+  if (empType === "pj") {
+    rows.push({ label: t("employeeCnpj"), value: (item as any).cnpj || "—" });
+  }
+
+  rows.push(
     { label: t("employeePosition"), value: item.position || "—" },
     { label: t("employeeDepartment"), value: item.department || "—" },
     { label: t("employeeSalary"), value: formatCurrency(item.salary, language) },
     { label: t("employeeHireDate"), value: formatDateString(item.hire_date, language) },
     { label: t("status"), value: t(item.status === "active" ? "employeeActive" : "employeeTerminated") },
-    { label: t("proLaboreNotes"), value: item.notes || "—" },
-  ];
+  );
 
   if (item.termination_date) {
-    rows.splice(7, 0, { label: t("employeeTerminationDate"), value: formatDateString(item.termination_date, language) });
+    rows.push({ label: t("employeeTerminationDate"), value: formatDateString(item.termination_date, language) });
   }
+
+  rows.push({ label: t("proLaboreNotes"), value: item.notes || "—" });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

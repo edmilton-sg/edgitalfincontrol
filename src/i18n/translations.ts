@@ -733,6 +733,10 @@ export const translations = {
     payrollProcessed: "Payroll processed!",
     payrollExpense: "Payroll",
     managedByPayrollModule: "Managed by Employees module",
+    employmentType: "Employment Type",
+    clt: "CLT",
+    pj: "PJ",
+    employeeCnpj: "CNPJ",
   },
 } as const;
 

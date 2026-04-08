@@ -40,6 +40,8 @@ export function PayrollDialog({ open, onOpenChange, employee, onSubmit }: Props)
   const { t, language } = useLanguage();
   const { register, handleSubmit, reset, watch } = useForm<PayrollData>();
 
+  const isPJ = (employee as any)?.employment_type === "pj";
+
   useEffect(() => {
     if (employee && open) {
       const now = new Date();
@@ -57,21 +59,32 @@ export function PayrollDialog({ open, onOpenChange, employee, onSubmit }: Props)
   const additions = Number(watch("other_additions") || 0);
   const deductions = Number(watch("other_deductions") || 0);
 
-  const calc = useMemo(() => calcPayroll(gross, additions, deductions), [gross, additions, deductions]);
+  const calc = useMemo(() => {
+    if (isPJ) {
+      return { inss: 0, irrf: 0, fgts: 0, net: gross + additions - deductions };
+    }
+    return calcPayroll(gross, additions, deductions);
+  }, [gross, additions, deductions, isPJ]);
 
   if (!employee) return null;
 
   const handleFormSubmit = (data: PayrollData) => {
-    const c = calcPayroll(Number(data.gross_salary), Number(data.other_additions), Number(data.other_deductions));
+    const g = Number(data.gross_salary);
+    const a = Number(data.other_additions);
+    const d = Number(data.other_deductions);
+    const c = isPJ
+      ? { inss: 0, irrf: 0, fgts: 0, net: g + a - d }
+      : calcPayroll(g, a, d);
+
     onSubmit({
       employee_id: employee.id,
       reference_month: data.reference_month,
-      gross_salary: Number(data.gross_salary),
+      gross_salary: g,
       inss_amount: c.inss,
       irrf_amount: c.irrf,
       fgts_amount: c.fgts,
-      other_additions: Number(data.other_additions),
-      other_deductions: Number(data.other_deductions),
+      other_additions: a,
+      other_deductions: d,
       net_salary: c.net,
       notes: data.notes,
     });
@@ -82,7 +95,7 @@ export function PayrollDialog({ open, onOpenChange, employee, onSubmit }: Props)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{t("processPayroll")} — {employee.name}</DialogTitle>
+          <DialogTitle>{t("processPayroll")} — {employee.name} {isPJ ? "(PJ)" : ""}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -104,20 +117,28 @@ export function PayrollDialog({ open, onOpenChange, employee, onSubmit }: Props)
             </div>
           </div>
 
-          {/* Encargos calculados */}
           <div className="rounded-md border p-3 space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">INSS</span>
-              <span className="font-medium">{formatCurrency(calc.inss, language)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">IRRF</span>
-              <span className="font-medium">{formatCurrency(calc.irrf, language)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">FGTS</span>
-              <span className="font-medium">{formatCurrency(calc.fgts, language)}</span>
-            </div>
+            {!isPJ && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">INSS</span>
+                  <span className="font-medium">{formatCurrency(calc.inss, language)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">IRRF</span>
+                  <span className="font-medium">{formatCurrency(calc.irrf, language)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">FGTS</span>
+                  <span className="font-medium">{formatCurrency(calc.fgts, language)}</span>
+                </div>
+              </>
+            )}
+            {isPJ && (
+              <div className="text-muted-foreground text-center py-1">
+                PJ — {t("pj")}: {language === "pt-BR" ? "sem encargos trabalhistas" : "no employment taxes"}
+              </div>
+            )}
             <div className="flex justify-between border-t pt-2 font-semibold">
               <span>{t("netAmount")}</span>
               <span>{formatCurrency(calc.net, language)}</span>
