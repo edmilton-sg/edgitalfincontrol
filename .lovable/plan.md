@@ -1,42 +1,37 @@
 
 
-## Confirmação de Pagamento com Anexos Obrigatórios
+## Corrigir visualização de anexos e adicionar detalhes de pagamento
 
-### Situação Atual
-O botão "Marcar como Pago" na tabela de folha executa a ação diretamente, sem pedir confirmação, data de pagamento ou anexos.
-
-### Solução
-Criar um dialog `PayrollPaymentDialog` que será aberto ao clicar em "Marcar como Pago", exigindo:
-
-| Campo | Obrigatório |
-|---|---|
-| Data de pagamento | Sim |
-| Nota Fiscal (arquivo) | Sim |
-| Comprovante de pagamento (arquivo) | Sim |
-| Boleto (arquivo) | Não |
+### Problema
+Os anexos da folha são salvos com `record_type: 'payroll'`, mas ao visualizar a despesa vinculada, o sistema busca `record_type: 'expense'` — não encontra nada. Além disso, não existe dialog de detalhes da folha de pagamento.
 
 ### Alterações
 
-**1. Novo componente `PayrollPaymentDialog.tsx`**
-- Dialog com campos: data de pagamento, upload de nota fiscal, upload de comprovante, upload de boleto (opcional)
-- Validação: botão "Confirmar" desabilitado até que data + nota fiscal + comprovante estejam preenchidos
-- Ao confirmar, faz upload dos arquivos para o bucket `attachments` e cria registros na tabela `attachments` com `record_type: 'payroll'`
+**1. FileAttachments — adicionar suporte a `payroll`**
+- `src/components/shared/FileAttachments.tsx`: Adicionar `"payroll"` ao union type de `recordType`
 
-**2. Atualizar `EmployeesPage.tsx`**
-- Substituir a chamada direta do `markPaidMutation` por abertura do novo dialog
-- O dialog retorna os dados (data, arquivos) e então executa a mutation existente com a data informada pelo usuário (em vez de `today`)
-- Após marcar como pago, salvar os anexos no Storage
+**2. ExpensesPage — buscar anexos do payroll para despesas vinculadas**
+- `src/pages/ExpensesPage.tsx`: Na função `loadAttachments`, quando a despesa tiver `source_type === 'payroll'`, buscar anexos com `record_id: source_id` e `record_type: 'payroll'` em vez de `record_type: 'expense'`
 
-**3. Atualizar `PayrollTable.tsx`**
-- Sem mudança estrutural; o `onMarkPaid` continuará sendo chamado, mas agora abrirá o dialog no pai
+**3. Novo componente `PayrollDetailDialog`**
+- Criar `src/components/employees/PayrollDetailDialog.tsx`
+- Exibir dados da folha: mês referência, bruto, INSS, IRRF, FGTS, líquido, status, data pagamento
+- Exibir nome do funcionário
+- Incluir `FileAttachments` com `recordType: 'payroll'` e `readOnly` para mostrar os comprovantes anexados
 
-**4. Traduções**
-- Adicionar chaves: `paymentConfirmation`, `invoiceRequired`, `paymentProofRequired`, `boleto`, `selectFile`, `invoiceFile`, `paymentProofFile`
+**4. PayrollTable — adicionar botão de visualizar detalhes**
+- Adicionar ícone `Eye` nas ações de cada linha
+- Adicionar prop `onView` ao componente
 
-### Fluxo do Usuário
-1. Clica no ícone ✓ na folha pendente
-2. Dialog abre pedindo data de pagamento + anexos
-3. Usuário seleciona data, anexa nota fiscal e comprovante (boleto opcional)
-4. Botão "Confirmar" fica habilitado
-5. Ao confirmar: arquivos são enviados ao Storage, registros de attachment criados, folha marcada como paga, despesa criada
+**5. EmployeesPage — integrar o dialog de detalhes**
+- Adicionar state para `viewPayroll`
+- Buscar anexos ao abrir o detalhe
+- Renderizar `PayrollDetailDialog`
+
+**6. Traduções**
+- Adicionar chaves: `payrollDetails`, `noAttachments` (se não existir), `paymentDate`
+
+### Fluxo corrigido
+- **Folha de pagamento**: clica no ícone de olho → abre `PayrollDetailDialog` com dados + anexos (`record_type: 'payroll'`)
+- **Despesas**: ao ver detalhe de despesa vinculada a payroll → busca anexos via `source_id` com `record_type: 'payroll'`
 
