@@ -186,7 +186,7 @@ export default function ExpensesPage() {
   }
 
   async function handleEdit(expense: Expense) {
-    const atts = await loadAttachments(String(expense.id));
+    const atts = await loadAttachments(expense);
     setEditAttachments(atts);
     setEditingExpense(expense);
     setFormOpen(true);
