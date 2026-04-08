@@ -15,6 +15,7 @@ import { EmployeeForm } from "@/components/employees/EmployeeForm";
 import { EmployeeDetailDialog } from "@/components/employees/EmployeeDetailDialog";
 import { PayrollDialog } from "@/components/employees/PayrollDialog";
 import { PayrollTable, type PayrollRow } from "@/components/employees/PayrollTable";
+import { PayrollPaymentDialog } from "@/components/employees/PayrollPaymentDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 export default function EmployeesPage() {
@@ -28,6 +29,8 @@ export default function EmployeesPage() {
   const [deleteItem, setDeleteItem] = useState<EmployeeRow | null>(null);
   const [payrollEmployee, setPayrollEmployee] = useState<EmployeeRow | null>(null);
   const [deletePayroll, setDeletePayroll] = useState<PayrollRow | null>(null);
+  const [paymentPayroll, setPaymentPayroll] = useState<PayrollRow | null>(null);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedEmployee, setSelectedEmployee] = useState<string>("all");
@@ -119,34 +122,71 @@ export default function EmployeesPage() {
     },
   });
 
-  // Mark payroll paid + create expense
-  const markPaidMutation = useMutation({
-    mutationFn: async (p: PayrollRow) => {
-      const today = new Date().toISOString().slice(0, 10);
-      const { error: e1 } = await supabase.from("payroll").update({ status: "paid", payment_date: today }).eq("id", p.id);
+  // Mark payroll paid + upload files + create expense
+  async function handlePaymentConfirm(data: {
+    payroll: PayrollRow;
+    paymentDate: string;
+    invoiceFile: File;
+    proofFile: File;
+    boletoFile?: File;
+  }) {
+    setPaymentLoading(true);
+    try {
+      const p = data.payroll;
+
+      // Upload files helper
+      const uploadFile = async (file: File, label: string) => {
+        const filePath = `${selectedCompanyId}/payroll/${p.id}/${label}_${file.name}`;
+        const { error: upErr } = await supabase.storage.from("attachments").upload(filePath, file);
+        if (upErr) throw upErr;
+        const { error: attErr } = await supabase.from("attachments").insert({
+          record_type: "payroll",
+          record_id: p.id,
+          company_id: selectedCompanyId!,
+          file_name: file.name,
+          file_path: filePath,
+          file_size: file.size,
+          content_type: file.type || "application/octet-stream",
+        });
+        if (attErr) throw attErr;
+      };
+
+      // Upload required files
+      await uploadFile(data.invoiceFile, "invoice");
+      await uploadFile(data.proofFile, "proof");
+      if (data.boletoFile) await uploadFile(data.boletoFile, "boleto");
+
+      // Update payroll status
+      const { error: e1 } = await supabase
+        .from("payroll")
+        .update({ status: "paid", payment_date: data.paymentDate })
+        .eq("id", p.id);
       if (e1) throw e1;
 
-      // Find employee name for description
+      // Create expense
       const emp = employees.find((e) => e.id === p.employee_id);
       const desc = `${t("payrollExpense")} — ${emp?.name ?? ""}`;
-      
       const { error: e2 } = await supabase.from("expenses").insert({
         company_id: selectedCompanyId!,
         description: desc,
         amount: p.gross_salary + p.fgts_amount,
-        date: today,
+        date: data.paymentDate,
         category: t("payrollExpense"),
         source_type: "payroll",
         source_id: p.id,
       });
       if (e2) throw e2;
-    },
-    onSuccess: () => {
+
       qc.invalidateQueries({ queryKey: ["payroll"] });
       qc.invalidateQueries({ queryKey: ["expenses"] });
       toast.success(t("paymentRegistered"));
-    },
-  });
+      setPaymentPayroll(null);
+    } catch (err: any) {
+      toast.error(err.message ?? "Error");
+    } finally {
+      setPaymentLoading(false);
+    }
+  }
 
   // Delete payroll
   const deletePayrollMutation = useMutation({
@@ -230,7 +270,7 @@ export default function EmployeesPage() {
 
           <PayrollTable
             data={filteredPayroll}
-            onMarkPaid={(p) => markPaidMutation.mutate(p)}
+            onMarkPaid={(p) => setPaymentPayroll(p)}
             onDelete={setDeletePayroll}
           />
         </TabsContent>
@@ -266,6 +306,14 @@ export default function EmployeesPage() {
         onOpenChange={(o) => !o && setPayrollEmployee(null)}
         employee={payrollEmployee}
         onSubmit={(data) => payrollMutation.mutate(data)}
+      />
+
+      <PayrollPaymentDialog
+        open={!!paymentPayroll}
+        onOpenChange={(o) => !o && setPaymentPayroll(null)}
+        payroll={paymentPayroll}
+        onConfirm={handlePaymentConfirm}
+        loading={paymentLoading}
       />
     </div>
   );
