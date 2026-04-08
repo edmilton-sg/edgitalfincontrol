@@ -343,6 +343,7 @@ export default function EmployeesPage() {
         open={!!deletePayroll}
         onOpenChange={(o) => !o && setDeletePayroll(null)}
         onConfirm={() => { if (deletePayroll) deletePayrollMutation.mutate(deletePayroll); setDeletePayroll(null); }}
+        details={deletePayrollDetails}
       />
 
       <PayrollDialog

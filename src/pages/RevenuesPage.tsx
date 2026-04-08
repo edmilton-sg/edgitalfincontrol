@@ -245,6 +245,7 @@ export default function RevenuesPage() {
         onOpenChange={(open) => !open && setDeletingRevenue(null)}
         onConfirm={() => deletingRevenue && deleteRevenue.mutate(deletingRevenue)}
         loading={deleteRevenue.isPending}
+        details={deleteDetails}
       />
     </div>
   );
