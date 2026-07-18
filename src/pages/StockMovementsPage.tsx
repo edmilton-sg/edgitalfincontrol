@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
-import { formatDate } from "@/lib/formatDate";
+import { formatDateString as formatDate } from "@/lib/formatDate";
 
 type Movement = { id: string; product_id: string; type: "in"|"out"|"adjustment"; quantity: number; unit_cost: number; reference_type: string | null; notes: string | null; date: string; };
 type Product = { id: string; name: string; unit: string; cost_price: number };
