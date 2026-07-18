@@ -284,7 +284,7 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">{t("employees")}</h1>
+        <h1 className="text-2xl font-bold">Custos Prestadores de Serviço</h1>
         <Button onClick={() => { setEditItem(null); setFormOpen(true); }}>
           <Plus className="h-4 w-4 mr-2" /> {t("newEmployee")}
         </Button>
@@ -292,7 +292,7 @@ export default function EmployeesPage() {
 
       <Tabs defaultValue="employees">
         <TabsList>
-          <TabsTrigger value="employees">{t("employees")}</TabsTrigger>
+          <TabsTrigger value="employees">Cadastro de Prestadores</TabsTrigger>
           <TabsTrigger value="payroll">{t("payrollTitle")}</TabsTrigger>
         </TabsList>
 
