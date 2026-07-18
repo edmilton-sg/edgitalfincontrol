@@ -16,6 +16,24 @@ export const translations = {
     settings: "Configurações",
     documents: "Documentos",
 
+    // Sidebar groups
+    purchases: "Compras",
+    suppliers: "Fornecedores",
+    quotations: "Cotações",
+    purchaseInvoices: "Entrada de Notas",
+    stock: "Estoque",
+    products: "Produtos",
+    stockMovements: "Movimentações",
+    pricing: "Precificação",
+    financial: "Financeiro",
+    invoicing: "Emissão de Notas",
+    nfe: "NF-e (Produto)",
+    nfse: "NFS-e (Serviço)",
+    integrations: "Integrações",
+    mercadoLivre: "Mercado Livre",
+    shopee: "Shopee",
+    banking: "Bancos (Pluggy)",
+
     // Header
     search: "Buscar...",
     notifications: "Notificações",
@@ -453,6 +471,23 @@ export const translations = {
 
     comingSoon: "Coming Soon",
     comingSoonDesc: "This module is under development and will be available in upcoming updates.",
+
+    purchases: "Purchases",
+    suppliers: "Suppliers",
+    quotations: "Quotations",
+    purchaseInvoices: "Purchase Invoices",
+    stock: "Stock",
+    products: "Products",
+    stockMovements: "Stock Movements",
+    pricing: "Pricing",
+    financial: "Financial",
+    invoicing: "Invoicing",
+    nfe: "NF-e (Product)",
+    nfse: "NFS-e (Service)",
+    integrations: "Integrations",
+    mercadoLivre: "Mercado Livre",
+    shopee: "Shopee",
+    banking: "Banking (Pluggy)",
 
     lightMode: "Light Mode",
     darkMode: "Dark Mode",

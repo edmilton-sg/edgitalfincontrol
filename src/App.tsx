@@ -18,6 +18,14 @@ import DocumentsPage from "./pages/DocumentsPage";
 import TaxesPage from "./pages/TaxesPage";
 import DrePage from "./pages/DrePage";
 import SettingsPage from "./pages/SettingsPage";
+import SuppliersPage from "./pages/SuppliersPage";
+import QuotationsPage from "./pages/QuotationsPage";
+import PurchaseInvoicesPage from "./pages/PurchaseInvoicesPage";
+import ProductsPage from "./pages/ProductsPage";
+import StockMovementsPage from "./pages/StockMovementsPage";
+import PricingPage from "./pages/PricingPage";
+import IssuedInvoicesPage from "./pages/IssuedInvoicesPage";
+import IntegrationPlaceholderPage from "./pages/IntegrationPlaceholderPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import CompanySetupPage from "./pages/CompanySetupPage";
@@ -61,6 +69,17 @@ function ProtectedRoutes() {
         <Route path="/employees" element={<EmployeesPage />} />
         <Route path="/pro-labore" element={<ProLaborePage />} />
         <Route path="/documents" element={<DocumentsPage />} />
+        <Route path="/suppliers" element={<SuppliersPage />} />
+        <Route path="/quotations" element={<QuotationsPage />} />
+        <Route path="/purchase-invoices" element={<PurchaseInvoicesPage />} />
+        <Route path="/products" element={<ProductsPage />} />
+        <Route path="/stock-movements" element={<StockMovementsPage />} />
+        <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/invoices/nfe" element={<IssuedInvoicesPage type="nfe" titleKey="nfe" />} />
+        <Route path="/invoices/nfse" element={<IssuedInvoicesPage type="nfse" titleKey="nfse" />} />
+        <Route path="/integrations/mercadolivre" element={<IntegrationPlaceholderPage titleKey="mercadoLivre" description="Conecte sua conta do Mercado Livre para sincronizar pedidos e produtos automaticamente." />} />
+        <Route path="/integrations/shopee" element={<IntegrationPlaceholderPage titleKey="shopee" description="Conecte sua conta da Shopee para sincronizar pedidos e produtos automaticamente." />} />
+        <Route path="/integrations/banking" element={<IntegrationPlaceholderPage titleKey="banking" description="Conecte suas contas bancárias via Pluggy para importar transações automaticamente." />} />
         <Route path="/reports" element={<PlaceholderPage titleKey="reports" />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/access-requests" element={<AccessRequestsPage />} />
