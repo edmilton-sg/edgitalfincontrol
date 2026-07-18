@@ -19,6 +19,7 @@ import { PayrollPaymentDialog } from "@/components/employees/PayrollPaymentDialo
 import { PayrollDetailDialog } from "@/components/employees/PayrollDetailDialog";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import type { Attachment } from "@/data/mockData";
+import { calcPayroll } from "@/lib/calcPayroll";
 
 export default function EmployeesPage() {
   const { t } = useLanguage();
@@ -126,6 +127,62 @@ export default function EmployeesPage() {
       qc.invalidateQueries({ queryKey: ["payroll"] });
       toast.success(t("payrollProcessed"));
     },
+  });
+
+  // Bulk generate payroll for all active employees for current month
+  const bulkGenerateMutation = useMutation({
+    mutationFn: async () => {
+      const now = new Date();
+      const refMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
+
+      const active = employees.filter((e: any) => e.status === "active");
+      if (active.length === 0) return { created: 0 };
+
+      // Find existing payroll rows for this month to skip duplicates
+      const { data: existing } = await supabase
+        .from("payroll")
+        .select("employee_id")
+        .eq("company_id", selectedCompanyId!)
+        .eq("reference_month", refMonth);
+      const existingIds = new Set((existing ?? []).map((r) => r.employee_id));
+
+      const rows = active
+        .filter((e: any) => !existingIds.has(e.id))
+        .map((e: any) => {
+          const gross = Number(e.salary) || 0;
+          const isPJ = e.employment_type === "pj";
+          const c = isPJ
+            ? { inss: 0, irrf: 0, fgts: 0, net: gross }
+            : calcPayroll(gross, 0, 0);
+          return {
+            company_id: selectedCompanyId!,
+            employee_id: e.id,
+            reference_month: refMonth,
+            gross_salary: gross,
+            inss_amount: c.inss,
+            irrf_amount: c.irrf,
+            fgts_amount: c.fgts,
+            other_additions: 0,
+            other_deductions: 0,
+            net_salary: c.net,
+            notes: null,
+          };
+        });
+
+      if (rows.length === 0) return { created: 0 };
+      const { error } = await supabase.from("payroll").insert(rows);
+      if (error) throw error;
+      return { created: rows.length };
+    },
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ["payroll"] });
+      if (res.created > 0) {
+        toast.success(t("payrollBulkGenerated").replace("{count}", String(res.created)));
+      } else {
+        toast.info(t("payrollBulkSkipped"));
+      }
+    },
+    onError: (err: any) => toast.error(err.message ?? "Error"),
   });
 
   // Mark payroll paid + upload files + create expense
@@ -288,6 +345,18 @@ export default function EmployeesPage() {
                 if (emp) setPayrollEmployee(emp);
               }}>
                 <Plus className="h-4 w-4 mr-2" /> {t("processPayroll")}
+              </Button>
+            )}
+            {selectedEmployee === "all" && (
+              <Button
+                onClick={() => {
+                  if (window.confirm(t("generateAllPayrollConfirm"))) {
+                    bulkGenerateMutation.mutate();
+                  }
+                }}
+                disabled={bulkGenerateMutation.isPending}
+              >
+                <Plus className="h-4 w-4 mr-2" /> {t("generateAllPayroll")}
               </Button>
             )}
           </div>
