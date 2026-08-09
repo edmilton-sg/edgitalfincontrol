@@ -26,6 +26,7 @@ import StockMovementsPage from "./pages/StockMovementsPage";
 import PricingPage from "./pages/PricingPage";
 import IssuedInvoicesPage from "./pages/IssuedInvoicesPage";
 import IntegrationPlaceholderPage from "./pages/IntegrationPlaceholderPage";
+import BankingPage from "./pages/BankingPage";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import CompanySetupPage from "./pages/CompanySetupPage";
@@ -79,7 +80,7 @@ function ProtectedRoutes() {
         <Route path="/invoices/nfse" element={<IssuedInvoicesPage type="nfse" titleKey="nfse" />} />
         <Route path="/integrations/mercadolivre" element={<IntegrationPlaceholderPage titleKey="mercadoLivre" description="Conecte sua conta do Mercado Livre para sincronizar pedidos e produtos automaticamente." />} />
         <Route path="/integrations/shopee" element={<IntegrationPlaceholderPage titleKey="shopee" description="Conecte sua conta da Shopee para sincronizar pedidos e produtos automaticamente." />} />
-        <Route path="/integrations/banking" element={<IntegrationPlaceholderPage titleKey="banking" description="Conecte suas contas bancárias via Pluggy para importar transações automaticamente." />} />
+        <Route path="/integrations/banking" element={<BankingPage />} />
         <Route path="/reports" element={<PlaceholderPage titleKey="reports" />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="/access-requests" element={<AccessRequestsPage />} />

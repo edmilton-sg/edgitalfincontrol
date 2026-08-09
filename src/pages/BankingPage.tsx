@@ -151,7 +151,7 @@ export default function BankingPage() {
         if (t.type === "credit") {
           const { data, error } = await supabase.from("revenues").insert({
             company_id: selectedCompanyId, date: t.date, description: t.description,
-            gross_amount: t.amount, fee_amount: 0, net_amount: t.amount, status: "received",
+            gross_amount: t.amount, fee_amount: 0, net_amount: t.amount, status: "paid",
           }).select("id").single();
           if (error) throw error;
           await supabase.from("bank_transactions").update({
