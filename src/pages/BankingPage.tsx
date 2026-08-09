@@ -13,7 +13,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, RefreshCw, Trash2, Link2, Landmark, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/lib/formatCurrency";
-import { formatDate } from "@/lib/formatDate";
+import { formatDateString } from "@/lib/formatDate";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 type Connection = {
@@ -28,6 +29,7 @@ type BankTx = {
 
 export default function BankingPage() {
   const { selectedCompanyId } = useCompany();
+  const { language } = useLanguage();
   const qc = useQueryClient();
 
   const [connectToken, setConnectToken] = useState<string | null>(null);
@@ -207,7 +209,7 @@ export default function BankingPage() {
 
       <div className="grid gap-4 sm:grid-cols-3">
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Saldo consolidado</CardTitle></CardHeader>
-          <CardContent><p className="text-2xl font-bold">{formatCurrency(totalBalance)}</p></CardContent></Card>
+          <CardContent><p className="text-2xl font-bold">{formatCurrency(totalBalance, language)}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Bancos conectados</CardTitle></CardHeader>
           <CardContent><p className="text-2xl font-bold">{connections.length}</p></CardContent></Card>
         <Card><CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Pendentes de conciliação</CardTitle></CardHeader>
@@ -239,12 +241,12 @@ export default function BankingPage() {
                     <div>
                       <p className="font-semibold">{c.institution_name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {c.last_synced_at ? `Última sincronização: ${formatDate(c.last_synced_at.slice(0, 10))}` : "Nunca sincronizado"}
+                        {c.last_synced_at ? `Última sincronização: ${formatDateString(c.last_synced_at.slice(0, 10), language)}` : "Nunca sincronizado"}
                       </p>
                       <div className="mt-1 flex flex-wrap gap-2">
                         <Badge variant={c.status === "UPDATED" ? "default" : "secondary"}>{c.status}</Badge>
                         {connAccounts.map((a) => (
-                          <Badge key={a.id} variant="outline">{a.name || a.type}: {formatCurrency(Number(a.balance))}</Badge>
+                          <Badge key={a.id} variant="outline">{a.name || a.type}: {formatCurrency(Number(a.balance), language)}</Badge>
                         ))}
                       </div>
                     </div>
@@ -320,11 +322,11 @@ export default function BankingPage() {
                           onCheckedChange={(v) => setSelected((s) => v ? [...s, t.id] : s.filter((i) => i !== t.id))}
                         />
                       </TableCell>
-                      <TableCell>{formatDate(t.date)}</TableCell>
+                      <TableCell>{formatDateString(t.date, language)}</TableCell>
                       <TableCell className="max-w-md truncate">{t.description}</TableCell>
                       <TableCell className="text-muted-foreground">{t.category ?? "—"}</TableCell>
                       <TableCell className={`text-right font-medium ${t.type === "credit" ? "text-success" : "text-destructive"}`}>
-                        {t.type === "credit" ? "+" : "-"}{formatCurrency(Number(t.amount))}
+                        {t.type === "credit" ? "+" : "-"}{formatCurrency(Number(t.amount), language)}
                       </TableCell>
                       <TableCell>
                         <Badge variant={t.status === "imported" ? "default" : t.status === "ignored" ? "outline" : "secondary"}>
@@ -355,11 +357,9 @@ export default function BankingPage() {
         <DeleteConfirmDialog
           open={!!deleteItem}
           onOpenChange={(o) => !o && setDeleteItem(null)}
-          title="Remover conexão bancária"
-          description={`Ao remover "${deleteItem.institution_name}" serão excluídos: ${accounts.filter((a) => a.connection_id === deleteItem.id).length} conta(s) e todas as transações bancárias importadas dessa conexão. Receitas e despesas já criadas a partir delas permanecem no sistema.`}
+          details={`Conexão "${deleteItem.institution_name}": ${accounts.filter((a) => a.connection_id === deleteItem.id).length} conta(s) e ${transactions.filter((t) => accounts.some((a) => a.id === t.account_id && a.connection_id === deleteItem.id)).length} transação(ões) bancária(s) serão removidas. Receitas e despesas já criadas a partir delas permanecem no sistema.`}
           onConfirm={() => handleDelete(deleteItem)}
-        />
-      )}
+        />      )}
     </div>
   );
 }
