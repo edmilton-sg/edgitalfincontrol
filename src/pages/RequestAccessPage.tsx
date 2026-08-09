@@ -52,13 +52,8 @@ export default function RequestAccessPage() {
       .order("created_at", { ascending: false });
 
     if (data && data.length > 0) {
-      const companyIds = [...new Set(data.map((r) => r.company_id))];
-      const { data: companies } = await supabase
-        .from("companies")
-        .select("id, name")
-        .in("id", companyIds);
-
-      const companyMap = new Map(companies?.map((c) => [c.id, c.name]) ?? []);
+      const { data: companies } = await supabase.rpc("get_requested_companies");
+      const companyMap = new Map((companies ?? []).map((c) => [c.id, c.name]));
       setMyRequests(data.map((r) => ({ ...r, company_name: companyMap.get(r.company_id) ?? "—" })));
     } else {
       setMyRequests([]);
@@ -82,15 +77,11 @@ export default function RequestAccessPage() {
     setSearching(true);
     setFoundCompany(null);
 
-    const formatted = formatCnpj(digits);
-    const { data } = await supabase
-      .from("companies")
-      .select("id, name, legal_name, cnpj")
-      .eq("cnpj", formatted)
-      .maybeSingle();
+    const { data } = await supabase.rpc("search_company_by_cnpj", { _cnpj: digits });
+    const found = data?.[0] ?? null;
 
-    if (data) {
-      setFoundCompany(data);
+    if (found) {
+      setFoundCompany(found);
     } else {
       toast({ title: t("companyNotFound"), variant: "destructive" });
     }
