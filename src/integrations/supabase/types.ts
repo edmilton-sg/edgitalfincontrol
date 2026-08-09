@@ -1656,6 +1656,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_access_company: {
+        Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      get_requested_companies: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1665,6 +1676,19 @@ export type Database = {
       }
       is_company_member: {
         Args: { _company_id: string; _user_id: string }
+        Returns: boolean
+      }
+      search_company_by_cnpj: {
+        Args: { _cnpj: string }
+        Returns: {
+          cnpj: string
+          id: string
+          legal_name: string
+          name: string
+        }[]
+      }
+      shares_company_with: {
+        Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
       }
     }
