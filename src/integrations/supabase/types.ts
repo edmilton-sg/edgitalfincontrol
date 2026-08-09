@@ -88,6 +88,179 @@ export type Database = {
         }
         Relationships: []
       }
+      bank_accounts: {
+        Row: {
+          balance: number
+          company_id: string
+          connection_id: string
+          created_at: string
+          currency: string
+          id: string
+          name: string
+          number: string | null
+          pluggy_account_id: string
+          subtype: string | null
+          type: string | null
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          company_id: string
+          connection_id: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          number?: string | null
+          pluggy_account_id: string
+          subtype?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          company_id?: string
+          connection_id?: string
+          created_at?: string
+          currency?: string
+          id?: string
+          name?: string
+          number?: string | null
+          pluggy_account_id?: string
+          subtype?: string | null
+          type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_accounts_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_accounts_connection_id_fkey"
+            columns: ["connection_id"]
+            isOneToOne: false
+            referencedRelation: "bank_connections"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_connections: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          institution_logo: string | null
+          institution_name: string
+          last_synced_at: string | null
+          pluggy_item_id: string
+          status: string
+          status_detail: string | null
+          updated_at: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          institution_logo?: string | null
+          institution_name?: string
+          last_synced_at?: string | null
+          pluggy_item_id: string
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          institution_logo?: string | null
+          institution_name?: string
+          last_synced_at?: string | null
+          pluggy_item_id?: string
+          status?: string
+          status_detail?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_connections_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bank_transactions: {
+        Row: {
+          account_id: string
+          amount: number
+          category: string | null
+          company_id: string
+          created_at: string
+          date: string
+          description: string
+          id: string
+          linked_record_id: string | null
+          linked_record_type: string | null
+          pluggy_transaction_id: string
+          status: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category?: string | null
+          company_id: string
+          created_at?: string
+          date: string
+          description?: string
+          id?: string
+          linked_record_id?: string | null
+          linked_record_type?: string | null
+          pluggy_transaction_id: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category?: string | null
+          company_id?: string
+          created_at?: string
+          date?: string
+          description?: string
+          id?: string
+          linked_record_id?: string | null
+          linked_record_type?: string | null
+          pluggy_transaction_id?: string
+          status?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bank_transactions_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "bank_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bank_transactions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       card_transactions: {
         Row: {
           amount: number
