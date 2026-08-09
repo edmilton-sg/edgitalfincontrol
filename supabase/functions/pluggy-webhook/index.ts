@@ -1,7 +1,7 @@
 import { corsHeaders } from 'npm:@supabase/supabase-js@2/cors';
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { getPluggyApiKey } from '../_shared/pluggy.ts';
-import { syncItem } from '../pluggy-sync/index.ts';
+import { syncItem } from '../_shared/sync.ts';
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
