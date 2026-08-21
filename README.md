@@ -1,73 +1,75 @@
-# Welcome to your Lovable project
+# Edgital FinControl
 
-## Project info
+Sistema web de **gestão financeira e administrativa para pequenas empresas**, construído com React, TypeScript e Supabase. Centraliza contas, receitas, despesas, notas fiscais, produtos, estoque e relatórios em um único painel.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+> Projeto criado com [Lovable](https://lovable.dev) e mantido de forma open source.
 
-## How can I edit this code?
+## ✨ Funcionalidades
 
-There are several ways of editing your application.
+- **Financeiro**: contas bancárias, cartões, receitas, despesas e pró-labore
+- **Relatórios**: DRE (Demonstração do Resultado do Exercício) e visão consolidada
+- **Fiscal**: notas fiscais emitidas, notas de compra, impostos e cotações
+- **Operacional**: produtos, movimentações de estoque, fornecedores e funcionários
+- **Documentos**: upload e organização de documentos da empresa
+- **Acesso**: login, cadastro, solicitação e aprovação de acesso (controle multiusuário)
+- **Configurações**: dados da empresa e preferências do sistema
 
-**Use Lovable**
+## 🛠️ Tecnologias
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- [Vite](https://vitejs.dev/) + [React 18](https://react.dev/) + [TypeScript](https://www.typescriptlang.org/)
+- [Tailwind CSS](https://tailwindcss.com/) + [shadcn/ui](https://ui.shadcn.com/) (Radix UI)
+- [Supabase](https://supabase.com/) (banco de dados, autenticação e RLS)
+- [TanStack Query](https://tanstack.com/query), [React Hook Form](https://react-hook-form.com/) + [Zod](https://zod.dev/)
+- [Recharts](https://recharts.org/) para gráficos e [Vitest](https://vitest.dev/) para testes
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 Rodando localmente
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+Pré-requisito: [Node.js](https://nodejs.org/) 18+ e npm (recomendado instalar via [nvm](https://github.com/nvm-sh/nvm#installing-and-updating)).
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+# 1. Clone o repositório
+git clone https://github.com/edmilton-sg/edgitalfincontrol.git
+cd edgitalfincontrol
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 2. Instale as dependências
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 3. Configure as variáveis de ambiente
+cp .env.example .env
+# edite o .env com os dados do seu projeto Supabase
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 4. Inicie o servidor de desenvolvimento
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O app ficará disponível em `http://localhost:8080` (ou na porta indicada no terminal).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 🔐 Variáveis de ambiente
 
-**Use GitHub Codespaces**
+Copie `.env.example` para `.env` e preencha:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Variável | Descrição |
+| --- | --- |
+| `VITE_SUPABASE_PROJECT_ID` | ID do projeto no Supabase |
+| `VITE_SUPABASE_URL` | URL do projeto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Chave `anon` (pública) do Supabase |
 
-## What technologies are used for this project?
+Estas variáveis são **públicas** por design — em um app Vite elas são embutidas no bundle do front-end. A proteção dos dados vem das **políticas de RLS** configuradas no Supabase, não do sigilo dessas chaves. Não coloque chaves secretas (ex.: `service_role`) neste arquivo.
 
-This project is built with:
+## 📜 Scripts
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+| Comando | O que faz |
+| --- | --- |
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção |
+| `npm run preview` | Pré-visualiza o build |
+| `npm run lint` | Verifica o código com ESLint |
+| `npm run test` | Executa os testes (Vitest) |
 
-## How can I deploy this project?
+## 🤝 Contribuindo
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+Contribuições são bem-vindas! Abra uma [issue](https://github.com/edmilton-sg/edgitalfincontrol/issues) para relatar bugs ou sugerir melhorias, ou envie um pull request.
 
-## Can I connect a custom domain to my Lovable project?
+## 📄 Licença
 
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Distribuído sob a licença [MIT](LICENSE).
