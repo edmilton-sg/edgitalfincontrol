@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -22,8 +23,9 @@ type Product = {
   id: string; company_id: string; sku: string | null; name: string;
   description: string | null; unit: string; category: string | null;
   cost_price: number; sale_price: number; current_stock: number; min_stock: number; is_active: boolean;
+  product_type: "resale" | "assembled";
 };
-const emptyForm: Partial<Product> = { name: "", sku: "", unit: "un", category: "", cost_price: 0, sale_price: 0, current_stock: 0, min_stock: 0, is_active: true };
+const emptyForm: Partial<Product> = { name: "", sku: "", unit: "un", category: "", cost_price: 0, sale_price: 0, current_stock: 0, min_stock: 0, is_active: true, product_type: "resale" };
 
 export default function ProductsPage() {
   const { t, language } = useLanguage();
@@ -100,6 +102,7 @@ export default function ProductsPage() {
               <TableRow>
                 <TableHead>SKU</TableHead>
                 <TableHead>Nome</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Categoria</TableHead>
                 <TableHead className="text-right">Custo</TableHead>
                 <TableHead className="text-right">Venda</TableHead>
@@ -109,13 +112,18 @@ export default function ProductsPage() {
             </TableHeader>
             <TableBody>
               {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Nenhum produto cadastrado</TableCell></TableRow>
+                <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Nenhum produto cadastrado</TableCell></TableRow>
               ) : filtered.map((p) => {
                 const low = Number(p.current_stock) <= Number(p.min_stock);
                 return (
                   <TableRow key={p.id}>
                     <TableCell className="font-mono text-xs">{p.sku ?? "—"}</TableCell>
                     <TableCell className="font-medium">{p.name}</TableCell>
+                    <TableCell>
+                      <Badge variant={p.product_type === "assembled" ? "default" : "secondary"}>
+                        {p.product_type === "assembled" ? "Montado" : "Revenda"}
+                      </Badge>
+                    </TableCell>
                     <TableCell>{p.category ?? "—"}</TableCell>
                     <TableCell className="text-right">{formatCurrency(Number(p.cost_price), language)}</TableCell>
                     <TableCell className="text-right">{formatCurrency(Number(p.sale_price), language)}</TableCell>
@@ -152,7 +160,26 @@ export default function ProductsPage() {
             </div>
             <div><Label>Descrição</Label><Textarea value={form.description ?? ""} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
             <div className="grid grid-cols-4 gap-3">
-              <div><Label>Custo</Label><Input type="number" step="0.01" value={form.cost_price ?? 0} onChange={(e) => setForm({ ...form, cost_price: Number(e.target.value) })} /></div>
+              <div className="col-span-2">
+                <Label>Tipo de produto</Label>
+                <Select value={form.product_type ?? "resale"} onValueChange={(v) => setForm({ ...form, product_type: v as "resale" | "assembled" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="resale">Revenda — comprado pronto</SelectItem>
+                    <SelectItem value="assembled">Montado — composto por insumos</SelectItem>
+                  </SelectContent>
+                </Select>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {form.product_type === "assembled"
+                    ? "O custo é calculado pela ficha técnica, na tela de Precificação."
+                    : "O custo é o valor de aquisição informado abaixo."}
+                </p>
+              </div>
+              <div>
+                <Label>Custo</Label>
+                <Input type="number" step="0.01" value={form.cost_price ?? 0} disabled={form.product_type === "assembled"}
+                  onChange={(e) => setForm({ ...form, cost_price: Number(e.target.value) })} />
+              </div>
               <div><Label>Preço Venda</Label><Input type="number" step="0.01" value={form.sale_price ?? 0} onChange={(e) => setForm({ ...form, sale_price: Number(e.target.value) })} /></div>
               <div><Label>Estoque</Label><Input type="number" step="0.01" value={form.current_stock ?? 0} onChange={(e) => setForm({ ...form, current_stock: Number(e.target.value) })} disabled={!!editItem} /></div>
               <div><Label>Est. Mínimo</Label><Input type="number" step="0.01" value={form.min_stock ?? 0} onChange={(e) => setForm({ ...form, min_stock: Number(e.target.value) })} /></div>
