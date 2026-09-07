@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
+import { db, type ProductComponentRow } from "@/integrations/supabase/pricingDb";
 import { useCompany } from "@/contexts/CompanyContext";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { Button } from "@/components/ui/button";
@@ -65,7 +65,7 @@ export default function PricingPage() {
     queryKey: ["products", selectedCompanyId],
     enabled: !!selectedCompanyId,
     queryFn: async () => {
-      const { data, error } = await supabase.from("products")
+      const { data, error } = await db.from("products")
         .select("id,name,sku,unit,cost_price,sale_price,product_type,labor_mode,labor_hours,labor_fixed_cost")
         .eq("company_id", selectedCompanyId!).eq("is_active", true).order("name");
       if (error) throw error;
@@ -77,7 +77,7 @@ export default function PricingPage() {
     queryKey: ["pricing_settings", selectedCompanyId],
     enabled: !!selectedCompanyId,
     queryFn: async () => {
-      const { data } = await supabase.from("pricing_settings").select("*").eq("company_id", selectedCompanyId!).maybeSingle();
+      const { data } = await db.from("pricing_settings").select("*").eq("company_id", selectedCompanyId!).maybeSingle();
       return data ?? { hourly_rate: 0, default_tax_percent: 0, default_commission_percent: 0, default_target_margin: 30, payment_terms_days: [30], supplier_payment_days: 0 };
     },
   });
@@ -91,11 +91,11 @@ export default function PricingPage() {
     let cancelled = false;
     (async () => {
       const [{ data: comps }, { data: conf }] = await Promise.all([
-        supabase.from("product_components").select("*").eq("parent_product_id", productId).order("order_index"),
-        supabase.from("pricing_configs").select("*").eq("product_id", productId).eq("is_active", true).maybeSingle(),
+        db.from("product_components").select("*").eq("parent_product_id", productId).order("order_index"),
+        db.from("pricing_configs").select("*").eq("product_id", productId).eq("is_active", true).maybeSingle(),
       ]);
       if (cancelled) return;
-      setBom((comps ?? []).map((c) => ({
+      setBom(((comps ?? []) as ProductComponentRow[]).map((c) => ({
         id: c.id, component_product_id: c.component_product_id,
         description: c.description, quantity: Number(c.quantity), unit_cost: Number(c.unit_cost),
       })));
@@ -145,9 +145,9 @@ export default function PricingPage() {
       if (!productId || !selectedCompanyId) throw new Error("Selecione um produto");
 
       if (isAssembled) {
-        await supabase.from("product_components").delete().eq("parent_product_id", productId);
+        await db.from("product_components").delete().eq("parent_product_id", productId);
         if (bom.length > 0) {
-          const { error } = await supabase.from("product_components").insert(
+          const { error } = await db.from("product_components").insert(
             bom.map((r, idx) => ({
               company_id: selectedCompanyId, parent_product_id: productId,
               component_product_id: r.component_product_id, description: r.description || "Insumo",
@@ -158,7 +158,7 @@ export default function PricingPage() {
         }
       }
 
-      const { error: pe } = await supabase.from("products").update({
+      const { error: pe } = await db.from("products").update({
         labor_mode: labor.mode, labor_hours: labor.hours, labor_fixed_cost: labor.fixed,
         sale_price: Number(price.salePrice.toFixed(2)),
       }).eq("id", productId);
@@ -167,10 +167,10 @@ export default function PricingPage() {
       const { id: _configId, ...cfgFields } = cfg;
       const payload = { ...cfgFields, company_id: selectedCompanyId, product_id: productId, is_active: true };
       if (cfg.id) {
-        const { error } = await supabase.from("pricing_configs").update(payload).eq("id", cfg.id);
+        const { error } = await db.from("pricing_configs").update(payload).eq("id", cfg.id);
         if (error) throw error;
       } else {
-        const { data, error } = await supabase.from("pricing_configs").insert({ ...payload, name: "Padrão" }).select("id").single();
+        const { data, error } = await db.from("pricing_configs").insert({ ...payload, name: "Padrão" }).select("id").single();
         if (error) throw error;
         setCfg((c) => ({ ...c, id: data.id }));
       }
